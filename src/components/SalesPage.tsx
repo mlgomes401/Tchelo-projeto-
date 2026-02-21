@@ -100,15 +100,39 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
       </section>
 
       {/* Gallery Grid */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="max-w-7xl mx-auto px-6 py-16"
+      >
         <h2 className="text-2xl font-display font-bold mb-8 flex items-center gap-3">
           <div className="w-2 h-8 bg-brand-red rounded-full" />
           Galeria de Fotos
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
           {data.images.map((img, idx) => (
             <motion.div
               key={idx}
+              variants={{
+                hidden: { opacity: 0, scale: 0.9 },
+                show: { opacity: 1, scale: 1 }
+              }}
               whileHover={{ scale: 1.02 }}
               onClick={() => {
                 setCurrentIndex(idx);
@@ -119,12 +143,18 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               <img src={img} className="w-full h-full object-cover" alt={`${data.model} view ${idx}`} />
             </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
       {/* Details Section */}
       <section className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12">
-        <div className="space-y-8">
+        <motion.div 
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="space-y-8"
+        >
           <div>
             <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-3">
               <div className="w-2 h-8 bg-brand-red rounded-full" />
@@ -132,16 +162,29 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {data.differentials.split('\n').filter(d => d.trim()).map((diff, i) => (
-                <div key={i} className="flex items-start gap-3 p-4 glass-card">
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex items-start gap-3 p-4 glass-card"
+                >
                   <CheckCircle2 className="w-5 h-5 text-brand-red shrink-0 mt-0.5" />
                   <span className="text-white/90">{diff}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-8">
+        <motion.div 
+          initial={{ opacity: 0, x: 30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="space-y-8"
+        >
           <div className="glass-card p-8 space-y-6">
             <h3 className="text-xl font-display font-bold">Informações de Contato</h3>
             <div className="space-y-4">
@@ -164,7 +207,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               Falar com Vendedor
             </a>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Sticky WhatsApp Button */}
