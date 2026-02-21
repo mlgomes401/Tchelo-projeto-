@@ -8,21 +8,21 @@ import {
   MapPin, 
   MessageCircle, 
   Sparkles,
-  ArrowRight,
-  Eye,
   Rocket,
-  CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Download,
+  Copy,
+  Eye,
+  ArrowLeft
 } from 'lucide-react';
 import { ImageUploader } from './ImageUploader';
 import { VehicleData } from '../types';
 import { SalesPage } from './SalesPage';
 import { cn } from '../lib/utils';
+import { generateStandaloneHTML } from '../lib/htmlGenerator';
 
 export function Creator() {
   const [step, setStep] = useState<'form' | 'preview'>('form');
-  const [isSaving, setIsSaving] = useState(false);
-  const [generatedId, setGeneratedId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [data, setData] = useState<VehicleData>({
@@ -40,7 +40,6 @@ export function Creator() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -52,96 +51,76 @@ export function Creator() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-
     if (!data.model.trim()) newErrors.model = 'Modelo é obrigatório';
     if (!data.year.trim()) newErrors.year = 'Ano é obrigatório';
-    
-    if (!data.km.trim()) {
-      newErrors.km = 'Quilometragem é obrigatória';
-    } else if (isNaN(Number(data.km)) || Number(data.km) < 0) {
-      newErrors.km = 'Quilometragem inválida';
-    }
-
-    if (!data.price.trim()) {
-      newErrors.price = 'Preço é obrigatório';
-    } else if (isNaN(Number(data.price)) || Number(data.price) <= 0) {
-      newErrors.price = 'Preço deve ser maior que zero';
-    }
-
+    if (!data.km.trim() || isNaN(Number(data.km))) newErrors.km = 'Quilometragem inválida';
+    if (!data.price.trim() || isNaN(Number(data.price))) newErrors.price = 'Preço inválido';
     if (!data.city.trim()) newErrors.city = 'Cidade é obrigatória';
-
-    const whatsappDigits = data.whatsapp.replace(/\D/g, '');
-    if (!data.whatsapp.trim()) {
-      newErrors.whatsapp = 'WhatsApp é obrigatório';
-    } else if (whatsappDigits.length < 10) {
-      newErrors.whatsapp = 'WhatsApp inválido (mínimo 10 dígitos)';
-    }
-
-    if (data.images.length < 1) {
-      newErrors.images = 'Adicione pelo menos uma foto do veículo';
-    }
+    if (!data.whatsapp.trim() || data.whatsapp.replace(/\D/g, '').length < 10) newErrors.whatsapp = 'WhatsApp inválido';
+    if (data.images.length < 1) newErrors.images = 'Adicione pelo menos uma foto';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleGenerate = () => {
     if (!validate()) {
       const firstError = document.querySelector('.text-red-500');
       firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/vehicles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleData: data })
-      });
-      const result = await response.json();
-      setGeneratedId(result.id);
-      setStep('preview');
-    } catch (error) {
-      console.error(error);
-      alert('Erro ao salvar página.');
-    } finally {
-      setIsSaving(false);
-    }
+    setStep('preview');
   };
 
-  if (step === 'preview' && generatedId) {
+  const downloadHTML = () => {
+    const html = generateStandaloneHTML(data);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${data.model.replace(/\s+/g, '_')}_venda.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const copyCode = () => {
+    const html = generateStandaloneHTML(data);
+    navigator.clipboard.writeText(html);
+    alert('Código HTML copiado para a área de transferência!');
+  };
+
+  if (step === 'preview') {
     return (
       <div className="relative">
-        <div className="fixed top-0 left-0 right-0 z-[60] bg-brand-red p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center gap-3 text-white">
-            <CheckCircle2 size={24} />
-            <span className="font-bold">Página Gerada com Sucesso!</span>
-          </div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <input 
-              readOnly 
-              value={`${window.location.origin}/v/${generatedId}`}
-              className="bg-white/20 border-none rounded-lg px-3 py-2 text-sm text-white w-full md:w-64 outline-none"
-            />
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-brand-dark/80 backdrop-blur-xl border-b border-white/10 p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+          <button 
+            onClick={() => setStep('form')}
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            <ArrowLeft size={20} />
+            Voltar ao Editor
+          </button>
+          
+          <div className="flex items-center gap-3">
             <button 
-              onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/v/${generatedId}`);
-                alert('Link copiado!');
-              }}
-              className="bg-white text-brand-red px-4 py-2 rounded-lg font-bold text-sm hover:bg-white/90 transition-colors whitespace-nowrap"
+              onClick={copyCode}
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all"
             >
-              Copiar Link
+              <Copy size={18} />
+              Copiar Código
             </button>
             <button 
-              onClick={() => setStep('form')}
-              className="text-white hover:underline text-sm font-medium whitespace-nowrap"
+              onClick={downloadHTML}
+              className="flex items-center gap-2 bg-brand-red hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-lg shadow-brand-red/20 transition-all"
             >
-              Editar
+              <Download size={18} />
+              Baixar .HTML
             </button>
           </div>
         </div>
-        <div className="pt-24 md:pt-16">
+        <div className="pt-24 md:pt-20">
           <SalesPage data={data} />
         </div>
       </div>
@@ -151,7 +130,6 @@ export function Creator() {
   return (
     <div className="min-h-screen bg-brand-dark py-12 px-6">
       <div className="max-w-4xl mx-auto space-y-12">
-        {/* Header */}
         <header className="text-center space-y-4">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
@@ -164,11 +142,10 @@ export function Creator() {
             AutoPage <span className="text-brand-red">Pro</span>
           </h1>
           <p className="text-white/60 text-lg max-w-xl mx-auto">
-            Crie páginas de vendas de alto impacto para seus veículos em minutos.
+            Crie páginas de vendas offline e independentes em segundos.
           </p>
         </header>
 
-        {/* Form */}
         <div className="glass-card p-8 md:p-12 space-y-10">
           <div className="space-y-6">
             <h2 className="text-2xl font-display font-bold flex items-center gap-3">
@@ -179,107 +156,41 @@ export function Creator() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">Modelo</label>
-                <input 
-                  name="model" 
-                  value={data.model} 
-                  onChange={handleChange}
-                  placeholder="Ex: BMW M3" 
-                  className={cn("input-field w-full", errors.model && "border-red-500 focus:border-red-500 focus:ring-red-500")} 
-                />
+                <input name="model" value={data.model} onChange={handleChange} placeholder="Ex: BMW M3" className={cn("input-field w-full", errors.model && "border-red-500")} />
                 {errors.model && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.model}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">Versão</label>
-                <input 
-                  name="version" 
-                  value={data.version} 
-                  onChange={handleChange}
-                  placeholder="Ex: Competition 3.0 Bi-Turbo" 
-                  className="input-field w-full" 
-                />
+                <input name="version" value={data.version} onChange={handleChange} placeholder="Ex: Competition" className="input-field w-full" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">Ano</label>
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 w-5 h-5" />
-                  <input 
-                    name="year" 
-                    value={data.year} 
-                    onChange={handleChange}
-                    placeholder="2024/2024" 
-                    className={cn("input-field w-full pl-12", errors.year && "border-red-500 focus:border-red-500 focus:ring-red-500")} 
-                  />
-                </div>
+                <input name="year" value={data.year} onChange={handleChange} placeholder="2024/2024" className={cn("input-field w-full", errors.year && "border-red-500")} />
                 {errors.year && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.year}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">Quilometragem</label>
-                <div className="relative">
-                  <Gauge className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 w-5 h-5" />
-                  <input 
-                    name="km" 
-                    type="number"
-                    value={data.km} 
-                    onChange={handleChange}
-                    placeholder="0" 
-                    className={cn("input-field w-full pl-12", errors.km && "border-red-500 focus:border-red-500 focus:ring-red-500")} 
-                  />
-                </div>
+                <input name="km" type="number" value={data.km} onChange={handleChange} placeholder="0" className={cn("input-field w-full", errors.km && "border-red-500")} />
                 {errors.km && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.km}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">Preço (R$)</label>
-                <div className="relative">
-                  <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 w-5 h-5" />
-                  <input 
-                    name="price" 
-                    type="number"
-                    value={data.price} 
-                    onChange={handleChange}
-                    placeholder="599000" 
-                    className={cn("input-field w-full pl-12", errors.price && "border-red-500 focus:border-red-500 focus:ring-red-500")} 
-                  />
-                </div>
+                <input name="price" type="number" value={data.price} onChange={handleChange} placeholder="599000" className={cn("input-field w-full", errors.price && "border-red-500")} />
                 {errors.price && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.price}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">Cidade</label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 w-5 h-5" />
-                  <input 
-                    name="city" 
-                    value={data.city} 
-                    onChange={handleChange}
-                    placeholder="São Paulo - SP" 
-                    className={cn("input-field w-full pl-12", errors.city && "border-red-500 focus:border-red-500 focus:ring-red-500")} 
-                  />
-                </div>
+                <input name="city" value={data.city} onChange={handleChange} placeholder="São Paulo - SP" className={cn("input-field w-full", errors.city && "border-red-500")} />
                 {errors.city && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.city}</p>}
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-white/70">WhatsApp (com DDD)</label>
-                <div className="relative">
-                  <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 w-5 h-5" />
-                  <input 
-                    name="whatsapp" 
-                    value={data.whatsapp} 
-                    onChange={handleChange}
-                    placeholder="11999999999" 
-                    className={cn("input-field w-full pl-12", errors.whatsapp && "border-red-500 focus:border-red-500 focus:ring-red-500")} 
-                  />
-                </div>
+                <label className="text-sm font-semibold text-white/70">WhatsApp</label>
+                <input name="whatsapp" value={data.whatsapp} onChange={handleChange} placeholder="11999999999" className={cn("input-field w-full", errors.whatsapp && "border-red-500")} />
                 {errors.whatsapp && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.whatsapp}</p>}
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-white/70">Diferenciais (um por linha)</label>
-                <textarea 
-                  name="differentials" 
-                  value={data.differentials} 
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Teto Solar&#10;Bancos em Couro&#10;Único Dono&#10;Revisado na Concessionária" 
-                  className="input-field w-full resize-none" 
-                />
+                <label className="text-sm font-semibold text-white/70">Diferenciais</label>
+                <textarea name="differentials" value={data.differentials} onChange={handleChange} rows={4} className="input-field w-full resize-none" />
               </div>
             </div>
           </div>
@@ -287,49 +198,16 @@ export function Creator() {
           <div className="space-y-6">
             <h2 className="text-2xl font-display font-bold flex items-center gap-3">
               <Sparkles className="text-brand-red" />
-              Fotos do Veículo
+              Fotos
             </h2>
-            <ImageUploader 
-              images={data.images} 
-              setImages={(imgs) => {
-                setData(prev => ({ ...prev, images: imgs }));
-                if (errors.images) {
-                  setErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.images;
-                    return newErrors;
-                  });
-                }
-              }} 
-            />
-            {errors.images && <p className="text-red-500 text-sm flex items-center gap-1 font-medium"><AlertTriangle size={16} /> {errors.images}</p>}
+            <ImageUploader images={data.images} setImages={(imgs) => setData(prev => ({ ...prev, images: imgs }))} />
+            {errors.images && <p className="text-red-500 text-sm flex items-center gap-1"><AlertTriangle size={16} /> {errors.images}</p>}
           </div>
 
-          <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row gap-4">
-            <button 
-              onClick={handleSave}
-              disabled={isSaving}
-              className="btn-primary flex-1 py-4 text-xl"
-            >
-              {isSaving ? (
-                <>
-                  <Rocket className="animate-bounce" />
-                  Gerando Página...
-                </>
-              ) : (
-                <>
-                  <Rocket />
-                  Gerar Minha Página
-                </>
-              )}
-            </button>
-          </div>
+          <button onClick={handleGenerate} className="btn-primary w-full py-4 text-xl">
+            <Eye /> Visualizar e Gerar HTML
+          </button>
         </div>
-
-        {/* Footer */}
-        <footer className="text-center text-white/30 text-sm">
-          AutoPage Pro © 2024 - O melhor gerador de páginas automotivas.
-        </footer>
       </div>
     </div>
   );
