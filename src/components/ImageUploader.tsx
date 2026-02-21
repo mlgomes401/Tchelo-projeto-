@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import imageCompression from 'browser-image-compression';
-import { Upload, X, Loader2, GripVertical } from 'lucide-react';
-import { motion, Reorder } from 'motion/react';
+import { Upload, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
+import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 interface ImageUploaderProps {
@@ -50,6 +50,15 @@ export function ImageUploader({ images, setImages }: ImageUploaderProps) {
     setImages(images.filter((_, i) => i !== index));
   };
 
+  const moveImage = (index: number, direction: 'up' | 'down') => {
+    const newImages = [...images];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < newImages.length) {
+      [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+      setImages(newImages);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div
@@ -72,34 +81,52 @@ export function ImageUploader({ images, setImages }: ImageUploaderProps) {
       </div>
 
       {images.length > 0 && (
-        <Reorder.Group
-          axis="y"
-          values={images}
-          onReorder={setImages}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-        >
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {images.map((img, index) => (
-            <Reorder.Item
-              key={img}
-              value={img}
-              className="relative aspect-square rounded-xl overflow-hidden group cursor-grab active:cursor-grabbing"
+            <motion.div
+              key={index}
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative aspect-square rounded-xl overflow-hidden group bg-brand-gray border border-white/5"
             >
               <img src={img} className="w-full h-full object-cover" alt={`Upload ${index}`} />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <GripVertical className="text-white w-6 h-6" />
+              
+              {/* Overlay Controls */}
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => moveImage(index, 'up')}
+                    disabled={index === 0}
+                    className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white disabled:opacity-30 transition-colors"
+                    title="Mover para trás"
+                  >
+                    <ArrowUp size={18} />
+                  </button>
+                  <button
+                    onClick={() => moveImage(index, 'down')}
+                    disabled={index === images.length - 1}
+                    className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white disabled:opacity-30 transition-colors"
+                    title="Mover para frente"
+                  >
+                    <ArrowDown size={18} />
+                  </button>
+                </div>
+                <button
+                  onClick={() => removeImage(index)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-brand-red/80 hover:bg-brand-red rounded-lg text-white text-xs font-bold transition-colors"
+                >
+                  <X size={14} /> Remover
+                </button>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeImage(index);
-                }}
-                className="absolute top-2 right-2 p-1 bg-brand-red rounded-full text-white hover:scale-110 transition-transform"
-              >
-                <X size={14} />
-              </button>
-            </Reorder.Item>
+
+              {/* Index Badge */}
+              <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded-md text-white/70">
+                #{index + 1}
+              </div>
+            </motion.div>
           ))}
-        </Reorder.Group>
+        </div>
       )}
     </div>
   );

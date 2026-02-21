@@ -34,6 +34,7 @@ export function Creator() {
     city: '',
     differentials: '',
     whatsapp: '',
+    instagram: '',
     images: []
   });
 
@@ -187,6 +188,10 @@ export function Creator() {
                 <label className="text-sm font-semibold text-white/70">WhatsApp</label>
                 <input name="whatsapp" value={data.whatsapp} onChange={handleChange} placeholder="11999999999" className={cn("input-field w-full", errors.whatsapp && "border-red-500")} />
                 {errors.whatsapp && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.whatsapp}</p>}
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-semibold text-white/70">Instagram (opcional)</label>
+                <input name="instagram" value={data.instagram} onChange={handleChange} placeholder="@seuusuario" className="input-field w-full" />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-white/70">Diferenciais</label>

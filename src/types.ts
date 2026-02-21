@@ -7,5 +7,6 @@ export interface VehicleData {
   city: string;
   differentials: string;
   whatsapp: string;
+  instagram: string;
   images: string[]; // base64 strings
 }

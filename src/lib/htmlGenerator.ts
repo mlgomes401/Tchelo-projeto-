@@ -114,6 +114,7 @@ export function generateStandaloneHTML(data: VehicleData) {
                     <div class="space-y-4 text-white/70">
                         <p>📍 Localização: ${data.city}</p>
                         <p>📱 WhatsApp: ${data.whatsapp}</p>
+                        ${data.instagram ? `<p>📸 Instagram: ${data.instagram}</p>` : ''}
                     </div>
                     <a href="${whatsappUrl}" target="_blank" class="btn-primary w-full justify-center py-4 text-lg">
                         Falar com Vendedor
