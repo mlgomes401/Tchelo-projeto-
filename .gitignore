@@ -10,3 +10,4 @@ coverage/
 database.sqlite
 .vercel
 .env*.local
+setup_db.mjs
