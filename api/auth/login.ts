@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabase } from '../_supabase';
+import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -8,24 +8,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    if (req.method === 'POST') {
-        const { username, password } = req.body;
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { username, password } = req.body || {};
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Missing username or password' });
+        }
+
+        const supabase = createClient(
+            process.env.SUPABASE_URL!,
+            process.env.SUPABASE_ANON_KEY!
+        );
+
         const { data: user, error } = await supabase
             .from('users')
             .select('*')
             .eq('username', username)
             .single();
 
-        if (error || !user) return res.status(401).json({ error: 'Invalid credentials' });
+        if (error || !user) {
+            return res.status(401).json({ error: 'Credenciais inválidas' });
+        }
 
         const valid = bcrypt.compareSync(password, user.password_hash);
-        if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+        if (!valid) {
+            return res.status(401).json({ error: 'Credenciais inválidas' });
+        }
 
         return res.json({
             token: `autopage_${user.role}_${user.id}`,
             user: { id: user.id, username: user.username, name: user.name, role: user.role }
         });
+    } catch (err: any) {
+        console.error('Login error:', err);
+        return res.status(500).json({ error: 'Erro interno do servidor', detail: err?.message });
     }
-
-    return res.status(405).json({ error: 'Method not allowed' });
 }
