@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { VehicleData } from '../types';
 import { formatCurrency, formatKM, cn } from '../lib/utils';
+import { useParams } from 'react-router-dom';
 
 interface SalesPageProps {
   data: VehicleData;
@@ -22,8 +23,47 @@ interface SalesPageProps {
 }
 
 export function SalesPage({ data, isPreview }: SalesPageProps) {
+  const { id: vehicleId } = useParams<{ id: string }>();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadInfo, setLeadInfo] = useState({ name: '', phone: '' });
+
+  const whatsappUrl = `https://wa.me/55${(data.whatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
+
+  const handleLeadCapture = async (e?: React.MouseEvent) => {
+    if (isPreview || !vehicleId) return;
+    
+    // If form is not shown yet, show it
+    if (!showLeadForm) {
+      e?.preventDefault();
+      setShowLeadForm(true);
+      return;
+    }
+
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleId,
+          vehicleName: `${data.model} ${data.version}`,
+          clientName: leadInfo.name,
+          clientPhone: leadInfo.phone,
+          origin: 'Site'
+        })
+      });
+      // After capture, redirect to WhatsApp
+      window.open(whatsappUrl, '_blank');
+      setShowLeadForm(false);
+    } catch (error) {
+      console.error("Failed to capture lead:", error);
+      window.open(whatsappUrl, '_blank');
+    }
+  };
+
+  const toggleZoom = () => setZoom(prev => prev === 1 ? 2 : 1);
 
   useEffect(() => {
     if (data.images.length > 1 && !isLightboxOpen) {
@@ -34,13 +74,78 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
     }
   }, [data.images.length, isLightboxOpen]);
 
-  const next = () => setCurrentIndex((prev) => (prev + 1) % data.images.length);
-  const prev = () => setCurrentIndex((prev) => (prev - 1 + data.images.length) % data.images.length);
-
-  const whatsappUrl = `https://wa.me/55${data.whatsapp.replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
+  const next = () => {
+    setCurrentIndex((prev) => (prev + 1) % data.images.length);
+    setZoom(1);
+  };
+  const prev = () => {
+    setCurrentIndex((prev) => (prev - 1 + data.images.length) % data.images.length);
+    setZoom(1);
+  };
 
   return (
     <div className="min-h-screen bg-brand-dark text-white pb-24">
+      {/* Lead Capture Modal */}
+      <AnimatePresence>
+        {showLeadForm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="glass-card p-8 w-full max-w-md space-y-6 relative"
+            >
+              <button 
+                onClick={() => setShowLeadForm(false)}
+                className="absolute top-4 right-4 text-white/50 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-brand-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="text-brand-red w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-display font-bold">Quase lá!</h3>
+                <p className="text-white/60 text-sm">Informe seus dados para iniciar o atendimento via WhatsApp.</p>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-white/40">Seu Nome</label>
+                  <input 
+                    type="text" 
+                    placeholder="Como podemos te chamar?"
+                    className="input-field w-full"
+                    value={leadInfo.name}
+                    onChange={e => setLeadInfo(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-white/40">Seu WhatsApp</label>
+                  <input 
+                    type="tel" 
+                    placeholder="(00) 00000-0000"
+                    className="input-field w-full"
+                    value={leadInfo.phone}
+                    onChange={e => setLeadInfo(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+                <button 
+                  onClick={() => handleLeadCapture()}
+                  disabled={!leadInfo.name || !leadInfo.phone}
+                  className="btn-primary w-full py-4 text-lg disabled:opacity-50"
+                >
+                  <MessageCircle size={20} />
+                  Abrir WhatsApp
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Hero Section */}
       <section className="relative h-[70vh] md:h-[85vh] overflow-hidden">
         <AnimatePresence mode="wait">
@@ -67,6 +172,9 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
             <div className="flex flex-wrap gap-2">
               <span className="bg-brand-red text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Destaque</span>
               <span className="bg-white/10 backdrop-blur-md text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{data.city}</span>
+              {data.status && data.status !== 'Disponível' && (
+                <span className="bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{data.status}</span>
+              )}
             </div>
             <h1 className="text-4xl md:text-7xl font-display font-extrabold tracking-tight leading-none">
               {data.model} <br />
@@ -208,6 +316,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleLeadCapture}
               className="btn-primary w-full py-4 text-lg"
             >
               <MessageCircle size={24} />
@@ -224,6 +333,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleLeadCapture}
         className="fixed bottom-8 right-8 z-50 bg-[#25D366] p-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center"
       >
         <MessageCircle size={32} className="text-white" />
@@ -245,23 +355,41 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               <X size={40} />
             </button>
             
-            <div className="relative w-full max-w-6xl aspect-video">
-              <img 
+            <div className="relative w-full max-w-6xl aspect-video flex items-center justify-center overflow-hidden">
+              <motion.img 
+                key={currentIndex}
                 src={data.images[currentIndex]} 
-                className="w-full h-full object-contain" 
+                animate={{ scale: zoom }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className={cn(
+                  "w-full h-full object-contain transition-all cursor-zoom-in",
+                  zoom > 1 && "cursor-zoom-out"
+                )} 
+                onClick={toggleZoom}
                 alt="Lightbox view" 
               />
               
-              <div className="absolute inset-y-0 left-0 flex items-center">
-                <button onClick={prev} className="p-4 text-white/50 hover:text-white transition-colors">
-                  <ChevronLeft size={60} />
-                </button>
-              </div>
-              <div className="absolute inset-y-0 right-0 flex items-center">
-                <button onClick={next} className="p-4 text-white/50 hover:text-white transition-colors">
-                  <ChevronRight size={60} />
-                </button>
-              </div>
+              {zoom === 1 && (
+                <>
+                  <div className="absolute inset-y-0 left-0 flex items-center">
+                    <button onClick={prev} className="p-4 text-white/50 hover:text-white transition-colors">
+                      <ChevronLeft size={60} />
+                    </button>
+                  </div>
+                  <div className="absolute inset-y-0 right-0 flex items-center">
+                    <button onClick={next} className="p-4 text-white/50 hover:text-white transition-colors">
+                      <ChevronRight size={60} />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <button 
+                onClick={toggleZoom}
+                className="absolute bottom-24 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-all"
+              >
+                <Maximize2 size={24} className={cn(zoom > 1 && "rotate-180")} />
+              </button>
             </div>
 
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-full px-4">

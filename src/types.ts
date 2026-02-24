@@ -9,4 +9,5 @@ export interface VehicleData {
   whatsapp: string;
   instagram: string;
   images: string[]; // base64 strings
+  status?: string;
 }

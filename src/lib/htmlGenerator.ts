@@ -2,7 +2,7 @@ import { VehicleData } from '../types';
 
 export function generateStandaloneHTML(data: VehicleData) {
   const imagesJSON = JSON.stringify(data.images);
-  const whatsappUrl = `https://wa.me/55${data.whatsapp.replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
+  const whatsappUrl = `https://wa.me/55${(data.whatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
   const priceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.price));
   const kmFormatted = new Intl.NumberFormat('pt-BR').format(Number(data.km)) + ' km';
   const differentialsList = data.differentials.split('\n').filter(d => d.trim());
