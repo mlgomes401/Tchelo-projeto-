@@ -10,7 +10,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const auth = req.headers?.authorization || req.headers?.['Authorization'];
     const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
     const parts = token.split('|');
-    const storeId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
+    let storeId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
+
+    // Acesso público para listagem de veículos na vitrine
+    if (!storeId && req.method === 'GET' && req.query.storeId) {
+        storeId = req.query.storeId as string;
+    }
 
     if (!storeId) return res.status(401).json({ error: 'Unauthorized' });
 

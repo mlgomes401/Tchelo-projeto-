@@ -34,13 +34,14 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
   const [storeName, setStoreName] = useState('AutoPage Elite');
 
   useEffect(() => {
-    fetch('/api/settings')
+    const sId = (data as any).store_id || 'store_demo';
+    fetch(`/api/settings?storeId=${sId}`)
       .then(res => res.json())
       .then(d => {
         if (d.storeName) setStoreName(d.storeName);
       })
       .catch(() => { });
-  }, []);
+  }, [data]);
 
   const whatsappUrl = `https://wa.me/55${(data.whatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
 
@@ -180,7 +181,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
       {!isPreview && (
         <div className="fixed top-0 left-0 right-0 z-[90] p-6 flex justify-between items-center pointer-events-none">
           <Link
-            to="/loja"
+            to={`/loja?store=${(data as any).store_id || 'store_demo'}`}
             className="flex items-center gap-2 px-6 py-3 bg-brand-dark/80 backdrop-blur-xl border border-white/10 rounded-2xl text-white font-bold text-sm hover:bg-white/10 transition-all group shadow-2xl pointer-events-auto"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />

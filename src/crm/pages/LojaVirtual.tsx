@@ -21,8 +21,15 @@ export default function LojaVirtual() {
     const [stats, setStats] = useState({ activeCars: 0, totalViews: 1245 });
     const [isSaving, setIsSaving] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [storeId, setStoreId] = useState('store_demo');
 
     useEffect(() => {
+        // Obter storeId do token
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            const parts = token.split('|');
+            if (parts.length >= 2) setStoreId(parts[1]);
+        }
         // Fetch Settings
         fetch('/api/settings')
             .then(res => {
@@ -75,7 +82,7 @@ export default function LojaVirtual() {
                 breadcrumbs={['CRM', 'Vitrine Digital']}
                 actions={
                     <Link
-                        to="/loja"
+                        to={`/loja?store=${storeId}`}
                         target="_blank"
                         className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
                     >

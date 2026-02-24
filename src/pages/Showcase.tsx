@@ -12,7 +12,7 @@ import {
     ChevronRight,
     TrendingUp
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { VehicleData } from '../types';
 import { formatCurrency, formatKM, cn } from '../lib/utils';
 
@@ -31,24 +31,26 @@ export default function Showcase() {
     const [storeName, setStoreName] = useState('AutoPage');
     const [storeWhatsapp, setStoreWhatsapp] = useState('');
 
+    const location = useLocation();
+
     useEffect(() => {
+        const query = new URLSearchParams(location.search);
+        const urlStoreId = query.get('store') || 'store_demo';
+
         const fetchVehiclesAndSettings = async () => {
             try {
                 // Fetch settings
-                const settingsRes = await fetch('/api/settings').catch(() => null);
+                const settingsRes = await fetch(`/api/settings?storeId=${urlStoreId}`).catch(() => null);
                 if (settingsRes && settingsRes.ok) {
                     const settingsData = await settingsRes.json();
                     if (settingsData.storeName) {
                         setStoreName(settingsData.storeName);
                         document.title = `${settingsData.storeName} - Digital Showcase`;
                     }
-                    if (settingsData.contactEmail) {
-                        // Using contact email field temporarily as whatsapp if it has numbers, or we can just leave it configurable later
-                    }
                 }
 
                 // Fetch vehicles
-                const res = await fetch('/api/vehicles');
+                const res = await fetch(`/api/vehicles?storeId=${urlStoreId}`);
                 if (!res.ok) throw new Error('API not ready');
                 const data = await res.json();
                 // Ensure data is parsed correctly (server returns JSON string for 'data' field)
