@@ -1,23 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabase } from './_supabase';
+import { supabase, getStoreId } from './_supabase';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    const storeId = getStoreId(req);
+    if (!storeId) return res.status(401).json({ error: 'Unauthorized' });
 
     if (req.method === 'GET') {
         const [vehiclesRes, leadsRes, closedLeadsRes, soldRes] = await Promise.all([
-            supabase.from('vehicles').select('id', { count: 'exact', head: true }),
-            supabase.from('leads').select('id', { count: 'exact', head: true }),
-            supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'Fechado'),
-            supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('status', 'Vendido'),
+            supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('store_id', storeId),
+            supabase.from('leads').select('id', { count: 'exact', head: true }).eq('store_id', storeId),
+            supabase.from('leads').select('id', { count: 'exact', head: true }).eq('store_id', storeId).eq('status', 'Fechado'),
+            supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('store_id', storeId).eq('status', 'Vendido'),
         ]);
-
         const totalLeads = leadsRes.count || 0;
         const closedLeads = closedLeadsRes.count || 0;
-
         return res.json({
             totalVehicles: vehiclesRes.count || 0,
             soldVehicles: soldRes.count || 0,

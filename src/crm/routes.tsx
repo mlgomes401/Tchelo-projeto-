@@ -9,6 +9,7 @@ import Financeiro from './pages/Financeiro';
 import LojaVirtual from './pages/LojaVirtual';
 import Configuracao from './pages/Configuracao';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import CrmLayout from './components/CrmLayout';
@@ -17,6 +18,7 @@ export default function CrmRoutes() {
     return (
         <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
             <Route path="/*" element={
                 <ProtectedRoute>

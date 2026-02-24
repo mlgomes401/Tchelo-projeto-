@@ -8,3 +8,5 @@ coverage/
 !.env.example
 *.sqlite
 database.sqlite
+.vercel
+.env*.local

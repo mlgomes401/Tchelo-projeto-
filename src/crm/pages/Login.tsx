@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Car, Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
@@ -26,6 +26,7 @@ export default function Login() {
             if (res.ok) {
                 const data = await res.json();
                 localStorage.setItem('auth_token', data.token);
+                localStorage.setItem('store_id', data.storeId || '');
                 navigate('/crm/dashboard');
             } else {
                 setError('Credenciais inválidas. Tente novamente.');
@@ -138,6 +139,12 @@ export default function Login() {
 
                 <p className="text-center text-white/20 text-[10px] font-black uppercase tracking-widest mt-8">
                     Sistema Protegido • AutoPage Elite CRM
+                </p>
+                <p className="text-center text-white/40 text-sm mt-4">
+                    Não tem conta?{' '}
+                    <Link to="/crm/register" className="text-brand-red hover:text-red-400 font-bold transition-colors">
+                        Criar minha loja
+                    </Link>
                 </p>
             </div>
         </div>
