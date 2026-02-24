@@ -61,9 +61,10 @@ export default function Configuracao() {
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
             <PageHeader
-                title="Configurações"
-                subtitle="Gerencie as informações e preferências da sua plataforma"
+                title="Configurações do Sistema"
+                subtitle="Gerencie as configurações gerais da sua plataforma."
                 breadcrumbs={['CRM', 'Configurações']}
+                showBack
                 actions={
                     <button
                         onClick={handleSave}

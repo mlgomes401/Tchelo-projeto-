@@ -8,11 +8,17 @@ import {
     Eye,
     CheckCircle2,
     X,
-    Image as ImageIcon,
+    ImageIcon,
     Loader2,
     Upload,
     Link as LinkIcon,
-    AlertCircle
+    AlertCircle,
+    ArrowLeft,
+    Instagram,
+    MessageCircle,
+    ChevronLeft,
+    ChevronRight,
+    Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from '../../components/PageHeader';
@@ -124,6 +130,25 @@ export default function Veiculos() {
             ...prev,
             images: prev.images.filter((_, i) => i !== index)
         }));
+    };
+
+    const moveImage = (index: number, direction: 'up' | 'down') => {
+        setNewVehicle(prev => {
+            const newImages = [...prev.images];
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex >= 0 && targetIndex < newImages.length) {
+                [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+            }
+            return { ...prev, images: newImages };
+        });
+    };
+
+    const setMainImage = (index: number) => {
+        setNewVehicle(prev => {
+            const newImages = [...prev.images];
+            const main = newImages.splice(index, 1)[0];
+            return { ...prev, images: [main, ...newImages] };
+        });
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -296,8 +321,26 @@ export default function Veiculos() {
                                         <button
                                             onClick={() => deleteVehicle(v.id)}
                                             className="p-2 bg-white/5 hover:bg-red-500/10 rounded-lg text-white/40 hover:text-red-500 transition-all"
+                                            title="Excluir Veículo"
                                         >
                                             <Trash2 size={16} />
+                                        </button>
+                                        <div className="w-px h-4 bg-white/10 mx-1" />
+                                        <a
+                                            href={`https://wa.me/?text=Confira este ${v.data.model} ${v.data.year} que acabei de cadastrar: ${window.location.origin}/v/${v.id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 bg-green-500/10 hover:bg-green-500/20 rounded-lg text-green-500 transition-all"
+                                            title="Compartilhar no WhatsApp"
+                                        >
+                                            <MessageCircle size={16} />
+                                        </a>
+                                        <button
+                                            onClick={() => alert('Copiado para o Instagram: ' + `${v.data.model} ${v.data.year} - ${formatCurrency(Number(v.data.price))}`)}
+                                            className="p-2 bg-pink-500/10 hover:bg-pink-500/20 rounded-lg text-pink-500 transition-all"
+                                            title="Preparar Post Instagram"
+                                        >
+                                            <Instagram size={16} />
                                         </button>
                                     </div>
                                     <a
@@ -498,12 +541,46 @@ export default function Veiculos() {
                                             {newVehicle.images.map((img, idx) => (
                                                 <div key={idx} className="aspect-square relative rounded-xl overflow-hidden border border-white/10 group">
                                                     <img src={img} className="w-full h-full object-cover" alt="Preview" />
-                                                    <button
-                                                        onClick={() => removeImage(idx)}
-                                                        className="absolute top-1 right-1 p-1.5 bg-black/60 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <X size={12} />
-                                                    </button>
+                                                    {idx === 0 && (
+                                                        <div className="absolute top-2 left-2 bg-brand-red text-white p-1 rounded-md shadow-lg" title="Foto Principal">
+                                                            <Star size={10} fill="currentColor" />
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); moveImage(idx, 'up'); }}
+                                                            disabled={idx === 0}
+                                                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-20"
+                                                            title="Mover para esquerda"
+                                                        >
+                                                            <ChevronLeft size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setMainImage(idx); }}
+                                                            className={cn(
+                                                                "p-1.5 rounded-lg transition-all",
+                                                                idx === 0 ? "bg-brand-red text-white" : "bg-white/10 hover:bg-brand-red text-white"
+                                                            )}
+                                                            title="Definir como Principal"
+                                                        >
+                                                            <Star size={14} fill={idx === 0 ? "currentColor" : "none"} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); moveImage(idx, 'down'); }}
+                                                            disabled={idx === newVehicle.images.length - 1}
+                                                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-20"
+                                                            title="Mover para direita"
+                                                        >
+                                                            <ChevronRight size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
+                                                            className="p-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-500 rounded-lg"
+                                                            title="Remover"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </AnimatePresence>

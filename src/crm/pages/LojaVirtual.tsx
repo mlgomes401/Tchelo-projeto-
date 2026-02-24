@@ -85,6 +85,7 @@ export default function LojaVirtual() {
                 title="Sua Vitrine Digital"
                 subtitle="Gerencie sua loja pública e configurações de marca"
                 breadcrumbs={['CRM', 'Vitrine Digital']}
+                showBack
                 actions={
                     <Link
                         to={`/loja?store=${storeId}`}

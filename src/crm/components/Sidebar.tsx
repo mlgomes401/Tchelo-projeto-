@@ -14,7 +14,10 @@ import {
     Search,
     Plus,
     Layout,
-    Globe
+    Globe,
+    ExternalLink,
+    Instagram as InstaIcon,
+    Phone
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -32,6 +35,7 @@ const menuItems = [
 export default function Sidebar() {
     const location = useLocation();
     const [storeName, setStoreName] = useState('AutoPage');
+    const [settings, setSettings] = useState<any>(null);
 
     const navigate = useNavigate();
 
@@ -43,6 +47,7 @@ export default function Sidebar() {
             })
             .then(data => {
                 if (data.storeName) setStoreName(data.storeName);
+                setSettings(data);
             })
             .catch(err => console.error("Sidebar settings error:", err));
     }, []);
@@ -107,6 +112,36 @@ export default function Sidebar() {
                     );
                 })}
             </nav>
+
+            {/* Social & Site Quick Links */}
+            <div className="px-4 py-4 space-y-2">
+                <a
+                    href={`https://wa.me/55${(settings?.whatsapp || '').replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all text-xs font-bold"
+                >
+                    <Phone size={16} />
+                    WhatsApp Loja
+                </a>
+                <a
+                    href={`https://instagram.com/${(settings?.instagram || '').replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 transition-all text-xs font-bold"
+                >
+                    <InstaIcon size={16} />
+                    Instagram
+                </a>
+                <Link
+                    to="/loja"
+                    target="_blank"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-red/10 text-brand-red hover:bg-brand-red hover:text-white transition-all text-xs font-bold"
+                >
+                    <ExternalLink size={16} />
+                    Ver Site Público
+                </Link>
+            </div>
 
             {/* Footer Profile/Exit */}
             <div className="p-4 mt-auto border-t border-white/5">
