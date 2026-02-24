@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabase, getStoreId } from './_supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,11 +8,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     if (req.method === 'POST') {
-        // Lead creation is public (from vehicle showcase page)
+        // Lead creation is partly public (from vehicle showcase page)
         const { vehicleId, vehicleName, clientName, clientEmail, clientPhone, origin, storeId: bodyStoreId } = req.body;
-        const targetStoreId = bodyStoreId || getStoreId(req);
+
+        // Extract storeId from token (if exists) or from body (for public leads)
+        const auth = req.headers?.authorization || req.headers?.['Authorization'];
+        const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
+        const parts = token.split('_');
+        const tokenStoreId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
+
+        const targetStoreId = tokenStoreId || bodyStoreId;
         if (!targetStoreId) return res.status(400).json({ error: 'store_id required' });
 
+        const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
         const { error } = await supabase.from('leads').insert({
             vehicle_id: vehicleId,
             vehicle_name: vehicleName,
@@ -28,8 +36,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // GET requires auth
-    const storeId = getStoreId(req);
+    const auth = req.headers?.authorization || req.headers?.['Authorization'];
+    const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
+    const parts = token.split('_');
+    const storeId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
+
     if (!storeId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
     if (req.method === 'GET') {
         const { data, error } = await supabase.from('leads').select('*').eq('store_id', storeId).order('created_at', { ascending: false });
