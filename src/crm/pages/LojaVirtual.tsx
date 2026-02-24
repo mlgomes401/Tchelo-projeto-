@@ -27,20 +27,25 @@ export default function LojaVirtual() {
         // Obter storeId do token
         const token = localStorage.getItem('auth_token');
         if (token) {
-            const parts = token.split('|');
+            const parts = token.split('|').length >= 2 ? token.split('|') : token.split('_');
             if (parts.length >= 2) setStoreId(parts[1]);
         }
         // Fetch Settings
         fetch('/api/settings')
             .then(res => {
-                if (!res.ok) throw new Error('API not ready');
+                if (!res.ok) throw new Error('Falha ao carregar configurações');
                 return res.json();
             })
             .then(data => {
-                setSettings(prev => ({ ...prev, ...data }));
+                if (data && Object.keys(data).length > 0) {
+                    setSettings(prev => ({ ...prev, ...data }));
+                }
+                setIsLoaded(true);
             })
-            .catch(err => console.error("Settings not loaded yet:", err))
-            .finally(() => setIsLoaded(true));
+            .catch(err => {
+                console.error("Settings load error:", err);
+                setIsLoaded(true); // Permite ver a página mesmo com erro, mas mantém defaults se necessário
+            });
 
         // Fetch Inventory Stats
         fetch('/api/vehicles')

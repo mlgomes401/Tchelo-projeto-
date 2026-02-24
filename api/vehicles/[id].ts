@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { getStoreId } from '../_supabase';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,11 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ ...data.data, status: data.status, store_id: data.store_id });
     }
 
-    const auth = req.headers?.authorization || req.headers?.['Authorization'];
-    const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
-    const parts = token.split('|');
-    const storeId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
-
+    const storeId = getStoreId(req);
     if (!storeId) return res.status(401).json({ error: 'Unauthorized' });
 
     if (req.method === 'PUT') {

@@ -7,10 +7,15 @@ export const supabase = createClient(
 
 export function getStoreId(req: any): string | null {
     const auth = req.headers?.authorization || req.headers?.['Authorization'];
-    const token = auth?.replace('Bearer ', '').trim();
+    const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
     if (!token) return null;
 
-    const parts = token.split('|');
+    // Tenta primeiro com '|', senão tenta com '_'
+    let parts = token.split('|');
+    if (parts.length < 4 || parts[0] !== 'autopage') {
+        parts = token.split('_');
+    }
+
     if (parts.length < 4 || parts[0] !== 'autopage') return null;
     return parts[1]; // storeId
 }
