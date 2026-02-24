@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from '../../components/PageHeader';
-import { cn, formatCurrency } from '../../../lib/utils';
+import { cn, formatCurrency, compressImage } from '../../../lib/utils';
 import { VehicleData } from '../../../types';
 
 interface VehicleResponse {
@@ -98,11 +98,12 @@ export default function Veiculos() {
 
         Array.from(files).forEach((file: File) => {
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
                 const base64 = reader.result as string;
+                const compressed = await compressImage(base64);
                 setNewVehicle(prev => ({
                     ...prev,
-                    images: [...prev.images, base64]
+                    images: [...prev.images, compressed]
                 }));
             };
             reader.readAsDataURL(file);
@@ -331,111 +332,120 @@ export default function Veiculos() {
 
                         <div className="p-10 grid lg:grid-cols-2 gap-12 max-h-[70vh] overflow-y-auto scrollbar-hide">
                             {/* Technical Details */}
-                            <form id="vehicle-form" onSubmit={handleSave} className="space-y-8">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Modelo</label>
-                                        <input
-                                            required
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
-                                            value={newVehicle.model}
-                                            onChange={e => setNewVehicle(v => ({ ...v, model: e.target.value }))}
-                                            placeholder="Ex: Porsche 911"
-                                        />
+                            <form id="vehicle-form" onSubmit={handleSave} className="space-y-12">
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-1.5 h-6 bg-brand-red rounded-full" />
+                                        <h3 className="text-white font-black text-xs uppercase tracking-[0.2em]">Informações Gerais</h3>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Ano</label>
-                                        <input
-                                            required
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
-                                            value={newVehicle.year}
-                                            onChange={e => setNewVehicle(v => ({ ...v, year: e.target.value }))}
-                                            placeholder="2024"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Versão</label>
-                                        <input
-                                            required
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
-                                            value={newVehicle.version}
-                                            onChange={e => setNewVehicle(v => ({ ...v, version: e.target.value }))}
-                                            placeholder="Turbo S"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Quilometragem</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
-                                            value={newVehicle.km}
-                                            onChange={e => setNewVehicle(v => ({ ...v, km: e.target.value }))}
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Preço (R$)</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
-                                            value={newVehicle.price}
-                                            onChange={e => setNewVehicle(v => ({ ...v, price: e.target.value }))}
-                                            placeholder="Ex: 120000"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Cidade/Local</label>
-                                        <input
-                                            required
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
-                                            value={newVehicle.city}
-                                            onChange={e => setNewVehicle(v => ({ ...v, city: e.target.value }))}
-                                            placeholder="São Paulo - SP"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Cor <span className="text-white/20">(Opcional)</span></label>
-                                        <input
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
-                                            value={newVehicle.color || ''}
-                                            onChange={e => setNewVehicle(v => ({ ...v, color: e.target.value }))}
-                                            placeholder="Prata Metálico"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Tipo de Estoque</label>
-                                        <div className="flex gap-4">
-                                            {[{ value: 'proprio', label: '🏠 Estoque Próprio' }, { value: 'consignado', label: '🤝 Consignado' }].map(opt => (
-                                                <label key={opt.value} className={cn(
-                                                    "flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-xs font-bold uppercase tracking-widest",
-                                                    newVehicle.stockType === opt.value
-                                                        ? "bg-brand-red/10 border-brand-red text-brand-red"
-                                                        : "bg-white/5 border-white/10 text-white/40 hover:border-white/30"
-                                                )}>
-                                                    <input
-                                                        type="radio"
-                                                        name="stockType"
-                                                        value={opt.value}
-                                                        checked={newVehicle.stockType === opt.value}
-                                                        onChange={e => setNewVehicle(v => ({ ...v, stockType: e.target.value as 'proprio' | 'consignado' }))}
-                                                        className="hidden"
-                                                    />
-                                                    {opt.label}
-                                                </label>
-                                            ))}
+                                    <div className="grid grid-cols-2 gap-6 bg-white/[0.02] p-6 rounded-3xl border border-white/5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Modelo</label>
+                                            <input
+                                                required
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.model}
+                                                onChange={e => setNewVehicle(v => ({ ...v, model: e.target.value }))}
+                                                placeholder="Ex: Porsche 911"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Versão</label>
+                                            <input
+                                                required
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.version}
+                                                onChange={e => setNewVehicle(v => ({ ...v, version: e.target.value }))}
+                                                placeholder="Turbo S"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Ano</label>
+                                            <input
+                                                required
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.year}
+                                                onChange={e => setNewVehicle(v => ({ ...v, year: e.target.value }))}
+                                                placeholder="2024"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Cor</label>
+                                            <input
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.color || ''}
+                                                onChange={e => setNewVehicle(v => ({ ...v, color: e.target.value }))}
+                                                placeholder="Prata Metálico"
+                                            />
                                         </div>
                                     </div>
-                                    <div className="col-span-2 space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Descrição <span className="text-white/20">(Opcional)</span></label>
-                                        <textarea
-                                            className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all resize-none min-h-[80px] placeholder:text-white/20"
-                                            value={newVehicle.description || ''}
-                                            onChange={e => setNewVehicle(v => ({ ...v, description: e.target.value }))}
-                                            placeholder="Detalhes adicionais, estado de conservação, acessórios..."
-                                        />
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
+                                        <h3 className="text-white font-black text-xs uppercase tracking-[0.2em]">Especificações & Preço</h3>
                                     </div>
+                                    <div className="grid grid-cols-2 gap-6 bg-white/[0.02] p-6 rounded-3xl border border-white/5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">KM</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.km}
+                                                onChange={e => setNewVehicle(v => ({ ...v, km: e.target.value }))}
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Preço (R$)</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.price}
+                                                onChange={e => setNewVehicle(v => ({ ...v, price: e.target.value }))}
+                                                placeholder="Ex: 120000"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Cidade</label>
+                                            <input
+                                                required
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.city}
+                                                onChange={e => setNewVehicle(v => ({ ...v, city: e.target.value }))}
+                                                placeholder="São Paulo - SP"
+                                            />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Estoque</label>
+                                            <div className="flex gap-2">
+                                                {[{ value: 'proprio', label: '🏠 Próprio' }, { value: 'consignado', label: '🤝 Consig.' }].map(opt => (
+                                                    <label key={opt.value} className={cn(
+                                                        "flex-1 flex items-center justify-center gap-1 p-2 rounded-xl border cursor-pointer transition-all text-[9.5px] font-bold uppercase",
+                                                        newVehicle.stockType === opt.value
+                                                            ? "bg-brand-red/10 border-brand-red text-brand-red"
+                                                            : "bg-white/5 border-white/10 text-white/40 hover:border-white/30"
+                                                    )}>
+                                                        <input type="radio" name="stockType" value={opt.value} checked={newVehicle.stockType === opt.value} onChange={e => setNewVehicle(v => ({ ...v, stockType: e.target.value as any }))} className="hidden" />
+                                                        {opt.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Descrição</label>
+                                    <textarea
+                                        className="w-full bg-white/[0.02] border border-white/5 rounded-3xl p-6 text-sm text-white focus:border-brand-red outline-none transition-all resize-none min-h-[120px] placeholder:text-white/20"
+                                        value={newVehicle.description || ''}
+                                        onChange={e => setNewVehicle(v => ({ ...v, description: e.target.value }))}
+                                        placeholder="Detalhes adicionais, estado de conservação..."
+                                    />
                                 </div>
                             </form>
 
