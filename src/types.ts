@@ -10,4 +10,7 @@ export interface VehicleData {
   instagram: string;
   images: string[]; // base64 strings
   status?: string;
+  color?: string;
+  description?: string;
+  stockType?: 'proprio' | 'consignado';
 }

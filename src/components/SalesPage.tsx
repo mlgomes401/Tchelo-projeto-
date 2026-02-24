@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Maximize2, 
-  X, 
-  MapPin, 
-  Calendar, 
-  Gauge, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  X,
+  MapPin,
+  Calendar,
+  Gauge,
   MessageCircle,
   Share2,
   CheckCircle2,
-  Instagram
+  Instagram,
+  ArrowLeft,
+  Car
 } from 'lucide-react';
 import { VehicleData } from '../types';
 import { formatCurrency, formatKM, cn } from '../lib/utils';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 interface SalesPageProps {
   data: VehicleData;
@@ -28,13 +30,23 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [showLeadForm, setShowLeadForm] = useState(false);
-  const [leadInfo, setLeadInfo] = useState({ name: '', phone: '' });
+  const [leadInfo, setLeadInfo] = useState({ name: '', phone: '', email: '' });
+  const [storeName, setStoreName] = useState('AutoPage Elite');
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(d => {
+        if (d.storeName) setStoreName(d.storeName);
+      })
+      .catch(() => { });
+  }, []);
 
   const whatsappUrl = `https://wa.me/55${(data.whatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
 
   const handleLeadCapture = async (e?: React.MouseEvent) => {
     if (isPreview || !vehicleId) return;
-    
+
     // If form is not shown yet, show it
     if (!showLeadForm) {
       e?.preventDefault();
@@ -50,6 +62,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
           vehicleId,
           vehicleName: `${data.model} ${data.version}`,
           clientName: leadInfo.name,
+          clientEmail: leadInfo.email,
           clientPhone: leadInfo.phone,
           origin: 'Site'
         })
@@ -88,24 +101,30 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
       {/* Lead Capture Modal */}
       <AnimatePresence>
         {showLeadForm && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               className="glass-card p-8 w-full max-w-md space-y-6 relative"
             >
-              <button 
+              <button
                 onClick={() => setShowLeadForm(false)}
                 className="absolute top-4 right-4 text-white/50 hover:text-white"
               >
                 <X size={24} />
               </button>
-              <div className="text-center space-y-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowLeadForm(false); }}
+                className="absolute top-6 right-6 p-2 text-white/30 hover:text-white transition-colors z-[120]"
+              >
+                <X size={24} />
+              </button>
+              <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-brand-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <MessageCircle className="text-brand-red w-8 h-8" />
                 </div>
@@ -115,8 +134,8 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-white/40">Seu Nome</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Como podemos te chamar?"
                     className="input-field w-full"
                     value={leadInfo.name}
@@ -125,15 +144,25 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-white/40">Seu WhatsApp</label>
-                  <input 
-                    type="tel" 
+                  <input
+                    type="tel"
                     placeholder="(00) 00000-0000"
                     className="input-field w-full"
                     value={leadInfo.phone}
                     onChange={e => setLeadInfo(prev => ({ ...prev, phone: e.target.value }))}
                   />
                 </div>
-                <button 
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-white/40">Seu E-mail <span className="text-white/20 normal-case font-normal">(opcional)</span></label>
+                  <input
+                    type="email"
+                    placeholder="seu@email.com"
+                    className="input-field w-full"
+                    value={leadInfo.email}
+                    onChange={e => setLeadInfo(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+                <button
                   onClick={() => handleLeadCapture()}
                   disabled={!leadInfo.name || !leadInfo.phone}
                   className="btn-primary w-full py-4 text-lg disabled:opacity-50"
@@ -146,6 +175,27 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Back Button and Store Header */}
+      {!isPreview && (
+        <div className="fixed top-0 left-0 right-0 z-[90] p-6 flex justify-between items-center pointer-events-none">
+          <Link
+            to="/loja"
+            className="flex items-center gap-2 px-6 py-3 bg-brand-dark/80 backdrop-blur-xl border border-white/10 rounded-2xl text-white font-bold text-sm hover:bg-white/10 transition-all group shadow-2xl pointer-events-auto"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            Voltar
+          </Link>
+
+          <div className="bg-brand-dark/80 backdrop-blur-xl border border-white/10 px-8 py-3 rounded-2xl shadow-2xl pointer-events-auto flex items-center gap-3">
+            <div className="w-8 h-8 bg-brand-red rounded-xl flex items-center justify-center">
+              <Car className="text-white" size={16} />
+            </div>
+            <span className="font-display font-black text-xl tracking-tighter uppercase text-white">{storeName}</span>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative h-[70vh] md:h-[85vh] overflow-hidden">
         <AnimatePresence mode="wait">
@@ -160,9 +210,9 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
             alt={data.model}
           />
         </AnimatePresence>
-        
+
         <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-black/30" />
-        
+
         <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 max-w-7xl mx-auto w-full">
           <motion.div
             initial={{ y: 30, opacity: 0 }}
@@ -180,12 +230,15 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               {data.model} <br />
               <span className="text-brand-red">{data.version}</span>
             </h1>
-            <div className="flex items-center gap-6 text-lg md:text-xl text-white/80 font-medium">
+            <div className="flex items-center gap-6 text-lg md:text-xl text-white/80 font-medium pb-2">
               <div className="flex items-center gap-2"><Calendar className="w-5 h-5 text-brand-red" /> {data.year}</div>
               <div className="flex items-center gap-2"><Gauge className="w-5 h-5 text-brand-red" /> {formatKM(Number(data.km))}</div>
+              {data.color && <div className="flex items-center gap-2 max-w-[200px] truncate"><span className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ background: 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)' }}></span> {data.color}</div>}
             </div>
-            <div className="text-3xl md:text-5xl font-display font-bold text-white">
+            <div className="text-4xl md:text-6xl font-display font-black text-white drop-shadow-2xl flex items-center gap-6">
               {formatCurrency(Number(data.price))}
+              <div className="h-10 w-px bg-white/20 hidden md:block"></div>
+              <span className="text-sm font-bold text-brand-red uppercase tracking-widest hidden md:block">Vendido por<br /><span className="text-white">{storeName}</span></span>
             </div>
           </motion.div>
         </div>
@@ -200,7 +253,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
           </button>
         </div>
 
-        <button 
+        <button
           onClick={() => setIsLightboxOpen(true)}
           className="absolute top-6 right-6 p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-md text-white transition-all"
         >
@@ -209,7 +262,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
       </section>
 
       {/* Gallery Grid */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
@@ -220,7 +273,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
           <div className="w-2 h-8 bg-brand-red rounded-full" />
           Galeria de Fotos
         </h2>
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
           initial="hidden"
           whileInView="show"
@@ -257,37 +310,59 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
 
       {/* Details Section */}
       <section className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
           className="space-y-8"
         >
-          <div>
-            <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-3">
-              <div className="w-2 h-8 bg-brand-red rounded-full" />
-              Diferenciais do Veículo
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {data.differentials.split('\n').filter(d => d.trim()).map((diff, i) => (
-                <motion.div 
-                  key={i} 
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex items-start gap-3 p-4 glass-card"
-                >
-                  <CheckCircle2 className="w-5 h-5 text-brand-red shrink-0 mt-0.5" />
-                  <span className="text-white/90">{diff}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="space-y-12"
+          >
+            {data.description && (
+              <div>
+                <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-3">
+                  <div className="w-2 h-8 bg-brand-red rounded-full" />
+                  Descrição do Veículo
+                </h2>
+                <div className="glass-card p-8 text-white/80 leading-relaxed font-medium whitespace-pre-line">
+                  {data.description}
+                </div>
+              </div>
+            )}
+
+            {data.differentials && (
+              <div>
+                <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-3">
+                  <div className="w-2 h-8 bg-brand-red rounded-full" />
+                  Detalhes e Acessórios
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {data.differentials.split('\n').filter(d => d.trim()).map((diff, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex items-start gap-3 p-4 glass-card"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-brand-red shrink-0 mt-0.5" />
+                      <span className="text-white/90">{diff}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: 30 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -306,38 +381,61 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
                 <span>WhatsApp: {data.whatsapp}</span>
               </div>
               {data.instagram && (
-                <div className="flex items-center gap-4 text-white/70">
-                  <Instagram className="text-brand-red" />
-                  <span>Instagram: {data.instagram}</span>
-                </div>
+                <a href={`https://instagram.com/${data.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center justify-between p-4 bg-gradient-to-tr from-pink-600 to-purple-600 rounded-xl hover:scale-105 transition-transform group">
+                  <div className="flex items-center gap-3">
+                    <Instagram className="text-white" />
+                    <span className="font-bold text-white">@{data.instagram.replace('@', '')}</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/80 group-hover:text-white">Seguir</span>
+                </a>
               )}
             </div>
-            <a 
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleLeadCapture}
-              className="btn-primary w-full py-4 text-lg"
-            >
-              <MessageCircle size={24} />
-              Falar com Vendedor
-            </a>
+
+            <div className="pt-4 border-t border-white/10 space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center">Inicie seu atendimento agora</p>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleLeadCapture}
+                className="btn-primary w-full py-5 text-lg flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1EBE5D] text-white shadow-[#25D366]/20 border-none"
+              >
+                <MessageCircle size={24} />
+                Chamar no WhatsApp
+              </a>
+            </div>
           </div>
         </motion.div>
       </section>
 
-      {/* Sticky WhatsApp Button */}
-      <motion.a
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        href={whatsappUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={handleLeadCapture}
-        className="fixed bottom-8 right-8 z-50 bg-[#25D366] p-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center"
-      >
-        <MessageCircle size={32} className="text-white" />
-      </motion.a>
+      <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
+        {data.instagram && (
+          <motion.a
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1 }}
+            href={`https://instagram.com/${data.instagram.replace('@', '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gradient-to-tr from-pink-500 to-purple-600 p-4 rounded-full shadow-2xl shadow-purple-500/30 hover:scale-110 transition-transform flex items-center justify-center group relative cursor-pointer"
+          >
+            <Instagram size={28} className="text-white" />
+            <span className="absolute right-full mr-4 bg-white text-slate-900 px-3 py-1.5 rounded-xl text-xs font-black shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Siga nossa loja</span>
+          </motion.a>
+        )}
+        <motion.a
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleLeadCapture}
+          className="bg-[#25D366] p-4 rounded-full shadow-2xl shadow-[#25D366]/30 hover:scale-110 transition-transform flex items-center justify-center group relative cursor-pointer"
+        >
+          <MessageCircle size={32} className="text-white" />
+          <span className="absolute right-full mr-4 bg-white text-slate-900 px-3 py-1.5 rounded-xl text-xs font-black shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Falar no WhatsApp</span>
+        </motion.a>
+      </div>
 
       {/* Lightbox */}
       <AnimatePresence>
@@ -348,27 +446,27 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
           >
-            <button 
+            <button
               onClick={() => setIsLightboxOpen(false)}
               className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
             >
               <X size={40} />
             </button>
-            
+
             <div className="relative w-full max-w-6xl aspect-video flex items-center justify-center overflow-hidden">
-              <motion.img 
+              <motion.img
                 key={currentIndex}
-                src={data.images[currentIndex]} 
+                src={data.images[currentIndex]}
                 animate={{ scale: zoom }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className={cn(
                   "w-full h-full object-contain transition-all cursor-zoom-in",
                   zoom > 1 && "cursor-zoom-out"
-                )} 
+                )}
                 onClick={toggleZoom}
-                alt="Lightbox view" 
+                alt="Lightbox view"
               />
-              
+
               {zoom === 1 && (
                 <>
                   <div className="absolute inset-y-0 left-0 flex items-center">
@@ -384,7 +482,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
                 </>
               )}
 
-              <button 
+              <button
                 onClick={toggleZoom}
                 className="absolute bottom-24 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-all"
               >
@@ -409,6 +507,6 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 }

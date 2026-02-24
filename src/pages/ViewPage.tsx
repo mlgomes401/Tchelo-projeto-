@@ -4,7 +4,7 @@ import { SalesPage } from '../components/SalesPage';
 import { VehicleData } from '../types';
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 
-export function ViewPage() {
+export default function ViewPage() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<VehicleData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ export function ViewPage() {
         const response = await fetch(`/api/vehicles/${id}`);
         if (!response.ok) throw new Error('Página não encontrada');
         const result = await response.json();
-        
+
         // Fetch status separately if needed, or update server.ts to return it
         // For now, let's assume server.ts returns { ...data, status }
         setData(result);
@@ -57,8 +57,8 @@ export function ViewPage() {
             {error || 'Não conseguimos encontrar a página que você está procurando.'}
           </p>
         </div>
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="flex items-center gap-2 text-brand-red font-bold hover:underline"
         >
           <ArrowLeft size={20} />
