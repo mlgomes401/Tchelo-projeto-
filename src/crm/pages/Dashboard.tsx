@@ -164,11 +164,8 @@ export default function Dashboard() {
                     </div>
 
                     <div className="space-y-6">
-                        {[
-                            { label: 'Site Oficial', value: 65, color: 'bg-brand-red' },
-                            { label: 'Instagram Ads', value: 20, color: 'bg-purple-500' },
-                            { label: 'Facebook Market', value: 10, color: 'bg-blue-600' },
-                            { label: 'WhatsApp Direto', value: 5, color: 'bg-green-500' },
+                        {(stats?.totalLeads || 0) > 0 ? [
+                            { label: 'Site Oficial', value: 100, color: 'bg-brand-red' },
                         ].map((item, i) => (
                             <div key={i} className="space-y-3">
                                 <div className="flex justify-between items-end">
@@ -176,7 +173,7 @@ export default function Dashboard() {
                                         <p className="text-white font-bold text-sm tracking-wide">{item.label}</p>
                                         <p className="text-white/20 text-[10px] font-black uppercase tracking-widest">{item.value}% Participação</p>
                                     </div>
-                                    <span className="text-white/40 text-xs font-bold">2.4k</span>
+                                    <span className="text-white/40 text-xs font-bold">{stats?.totalLeads}</span>
                                 </div>
                                 <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                                     <div
@@ -185,7 +182,11 @@ export default function Dashboard() {
                                     />
                                 </div>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="text-center py-10 text-white/10 uppercase font-black text-[10px] tracking-widest">
+                                Sem dados de leads ainda
+                            </div>
+                        )}
                     </div>
 
                     <button onClick={() => navigate('/crm/relatorios')} className="w-full mt-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50 text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all">

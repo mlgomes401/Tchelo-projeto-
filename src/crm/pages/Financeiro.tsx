@@ -203,7 +203,7 @@ export default function Financeiro() {
                 <StatCard index={0} label="Saldo em Conta" value={formatCurrency(stats.balance)} icon={Wallet} trend="+5.4k este mês" color="text-blue-500" />
                 <StatCard index={1} label="Receitas (Total)" value={formatCurrency(stats.entrada)} icon={TrendingUp} trend="+12%" color="text-green-500" />
                 <StatCard index={2} label="Despesas (Total)" value={formatCurrency(stats.saida)} icon={TrendingDown} trend="+2.1%" color="text-red-500" />
-                <StatCard index={3} label="Ticket Médio" value="R$ 89k" icon={DollarSign} trend="+8%" color="text-purple-500" />
+                <StatCard index={3} label="Transações" value={transactionList.length.toString()} icon={DollarSign} trend="Total geral" color="text-purple-500" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -331,9 +331,8 @@ export default function Financeiro() {
 
                         <div className="space-y-8">
                             {[
-                                { name: 'Venda de Veículos', current: stats.entrada, target: 2000000, color: 'bg-brand-red' },
-                                { name: 'Financiamentos', current: 28000, target: 50000, color: 'bg-blue-500' },
-                                { name: 'Pós-venda', current: 12500, target: 20000, color: 'bg-green-500' }
+                                { name: 'Venda de Veículos', current: stats.entrada, target: Math.max(stats.entrada * 1.5, 50000), color: 'bg-brand-red' },
+                                { name: 'Meta de Receita', current: stats.entrada, target: Math.max(stats.entrada * 2, 100000), color: 'bg-blue-500' }
                             ].map((goal) => {
                                 const percent = Math.min(100, Math.round((goal.current / goal.target) * 100));
                                 return (
@@ -367,8 +366,8 @@ export default function Financeiro() {
                         <h4 className="text-white/20 font-black text-[10px] uppercase tracking-widest mb-10 relative z-10">Business Platinum</h4>
 
                         <div className="mb-10 relative z-10">
-                            <span className="text-white/30 text-[10px] font-black uppercase tracking-widest block mb-1">Disponível</span>
-                            <span className="text-white font-black text-3xl tracking-tighter">R$ 412.350,00</span>
+                            <span className="text-white/30 text-[10px] font-black uppercase tracking-widest block mb-1">Saldo Real em Conta</span>
+                            <span className="text-white font-black text-3xl tracking-tighter">{formatCurrency(stats.balance)}</span>
                         </div>
 
                         <div className="flex gap-4 relative z-10">
