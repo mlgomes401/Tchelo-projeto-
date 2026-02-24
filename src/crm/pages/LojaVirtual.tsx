@@ -63,15 +63,21 @@ export default function LojaVirtual() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await fetch('/api/settings', {
+            const res = await fetch('/api/settings', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
                 body: JSON.stringify(settings)
             });
+            if (!res.ok) throw new Error('Erro ao salvar configurações');
+            alert('Configurações salvas com sucesso!');
             // Reload to update sidebar if name changed
             window.location.reload();
         } catch (err) {
             console.error(err);
+            alert('Falha ao salvar. Tente novamente.');
         } finally {
             setIsSaving(false);
         }
@@ -174,15 +180,35 @@ export default function LojaVirtual() {
                                     <Palette size={14} className="text-white/40" />
                                     Aparência
                                 </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button className="flex items-center justify-between p-4 rounded-3xl border bg-brand-red/10 border-brand-red/30 text-white transition-all">
-                                        <span className="text-xs font-bold">Modo Escuro (Elegante)</span>
-                                        <div className="w-4 h-4 rounded-full bg-brand-red" />
-                                    </button>
-                                    <button disabled className="flex items-center justify-between p-4 rounded-3xl border bg-white/5 border-white/5 text-white/30 cursor-not-allowed">
-                                        <span className="text-xs font-bold">Modo Claro (Em breve)</span>
-                                        <div className="w-4 h-4 rounded-full bg-white/10" />
-                                    </button>
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Cor Principal da Marca</label>
+                                        <div className="flex items-center gap-4 ml-4">
+                                            <input
+                                                type="color"
+                                                value={settings.primaryColor}
+                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                className="w-16 h-16 bg-transparent border-none cursor-pointer"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={settings.primaryColor}
+                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
+                                                className="bg-slate-950 border border-white/10 rounded-2xl py-3 px-6 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-mono"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button className="flex items-center justify-between p-4 rounded-3xl border bg-brand-red/10 border-brand-red/30 text-white transition-all">
+                                            <span className="text-xs font-bold">Modo Escuro (Elegante)</span>
+                                            <div className="w-4 h-4 rounded-full bg-brand-red" />
+                                        </button>
+                                        <button disabled className="flex items-center justify-between p-4 rounded-3xl border bg-white/5 border-white/5 text-white/30 cursor-not-allowed">
+                                            <span className="text-xs font-bold">Modo Claro (Em breve)</span>
+                                            <div className="w-4 h-4 rounded-full bg-white/10" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

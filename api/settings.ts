@@ -29,10 +29,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'PATCH') {
         const settings = req.body;
         for (const [key, value] of Object.entries(settings)) {
-            const { error } = await supabase.from('settings').upsert({ key, value, store_id: storeId }, { onConflict: 'key,store_id' });
-            if (error) {
-                // Compatibility for older tables without unique constraints on key,store_id if needed
-                await supabase.from('settings').update({ value }).eq('key', key).eq('store_id', storeId);
+            // Check if exists
+            const { data } = await supabase.from('settings').select('key').eq('key', key).eq('store_id', storeId).single();
+
+            if (data) {
+                // Update
+                const { error: updateError } = await supabase.from('settings').update({ value }).eq('key', key).eq('store_id', storeId);
+                if (updateError) console.error(`Error updating ${key}:`, updateError);
+            } else {
+                // Insert
+                const { error: insertError } = await supabase.from('settings').insert({ key, value, store_id: storeId });
+                if (insertError) console.error(`Error inserting ${key}:`, insertError);
             }
         }
         return res.json({ success: true });

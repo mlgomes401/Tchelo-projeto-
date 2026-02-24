@@ -42,13 +42,17 @@ export default function Configuracao() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await fetch('/api/settings', {
+            const res = await fetch('/api/settings', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
                 body: JSON.stringify(settings)
             });
-            // Force reload or update context if needed
-            window.location.reload(); // Simple way to update the sidebar name for now
+            if (!res.ok) throw new Error('Erro ao salvar');
+            alert('Configurações salvas!');
+            window.location.reload();
         } catch (err) {
             console.error(err);
         } finally {

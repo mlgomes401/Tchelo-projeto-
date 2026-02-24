@@ -32,6 +32,8 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadInfo, setLeadInfo] = useState({ name: '', phone: '', email: '' });
   const [storeName, setStoreName] = useState('AutoPage Elite');
+  const [storeWhatsapp, setStoreWhatsapp] = useState('');
+  const [storeInstagram, setStoreInstagram] = useState('');
 
   useEffect(() => {
     const sId = (data as any).store_id || 'store_demo';
@@ -39,11 +41,15 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
       .then(res => res.json())
       .then(d => {
         if (d.storeName) setStoreName(d.storeName);
+        if (d.whatsapp) setStoreWhatsapp(d.whatsapp);
+        if (d.instagram) setStoreInstagram(d.instagram);
       })
       .catch(() => { });
   }, [data]);
 
-  const whatsappUrl = `https://wa.me/55${(data.whatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
+  const finalWhatsapp = data.whatsapp || storeWhatsapp;
+  const finalInstagram = data.instagram || storeInstagram;
+  const whatsappUrl = `https://wa.me/55${(finalWhatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
 
   const handleLeadCapture = async (e?: React.MouseEvent) => {
     if (isPreview || !vehicleId) return;
@@ -379,13 +385,13 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               </div>
               <div className="flex items-center gap-4 text-white/70">
                 <MessageCircle className="text-brand-red" />
-                <span>WhatsApp: {data.whatsapp}</span>
+                <span>WhatsApp: {finalWhatsapp}</span>
               </div>
-              {data.instagram && (
-                <a href={`https://instagram.com/${data.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center justify-between p-4 bg-gradient-to-tr from-pink-600 to-purple-600 rounded-xl hover:scale-105 transition-transform group">
+              {finalInstagram && (
+                <a href={`https://instagram.com/${finalInstagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center justify-between p-4 bg-gradient-to-tr from-pink-600 to-purple-600 rounded-xl hover:scale-105 transition-transform group">
                   <div className="flex items-center gap-3">
                     <Instagram className="text-white" />
-                    <span className="font-bold text-white">@{data.instagram.replace('@', '')}</span>
+                    <span className="font-bold text-white">@{finalInstagram.replace('@', '')}</span>
                   </div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/80 group-hover:text-white">Seguir</span>
                 </a>
@@ -410,12 +416,12 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
       </section>
 
       <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
-        {data.instagram && (
+        {finalInstagram && (
           <motion.a
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.1 }}
-            href={`https://instagram.com/${data.instagram.replace('@', '')}`}
+            href={`https://instagram.com/${finalInstagram.replace('@', '')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-gradient-to-tr from-pink-500 to-purple-600 p-4 rounded-full shadow-2xl shadow-purple-500/30 hover:scale-110 transition-transform flex items-center justify-center group relative cursor-pointer"

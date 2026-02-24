@@ -9,8 +9,10 @@ import {
     Calendar,
     Gauge,
     MapPin,
-    ChevronRight,
-    TrendingUp
+    TrendingUp,
+    Instagram,
+    Phone,
+    ChevronRight
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { VehicleData } from '../types';
@@ -30,6 +32,7 @@ export default function Showcase() {
     const [selectedCategory, setSelectedCategory] = useState('Todos');
     const [storeName, setStoreName] = useState('AutoPage');
     const [storeWhatsapp, setStoreWhatsapp] = useState('');
+    const [storeInstagram, setStoreInstagram] = useState('');
 
     const location = useLocation();
 
@@ -47,6 +50,8 @@ export default function Showcase() {
                         setStoreName(settingsData.storeName);
                         document.title = `${settingsData.storeName} - Digital Showcase`;
                     }
+                    if (settingsData.whatsapp) setStoreWhatsapp(settingsData.whatsapp);
+                    if (settingsData.instagram) setStoreInstagram(settingsData.instagram);
                 }
 
                 // Fetch vehicles
@@ -90,16 +95,23 @@ export default function Showcase() {
                         </div>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-8">
-                        <Link to="/" className="text-sm font-bold text-white/50 hover:text-white transition-colors">Início</Link>
-                        <Link to="/loja" className="text-sm font-bold text-brand-red">Estoque</Link>
-                        <Link to="/crm" className="text-sm font-bold text-white/50 hover:text-white transition-colors">Área do Lojista</Link>
+                    <div className="hidden md:flex items-center gap-4">
+                        {storeInstagram && (
+                            <a
+                                href={`https://instagram.com/${storeInstagram.replace('@', '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-2.5 bg-white/5 hover:bg-pink-500/10 text-white/50 hover:text-pink-500 rounded-xl transition-all"
+                                title="Instagram"
+                            >
+                                <Instagram size={18} />
+                            </a>
+                        )}
+                        <a href={`https://wa.me/55${storeWhatsapp.replace(/\D/g, '')}?text=Olá! Vim pelo site da vitrine e gostaria de atendimento.`} target="_blank" rel="noreferrer" className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2">
+                            <Phone size={16} />
+                            WhatsApp
+                        </a>
                     </div>
-
-                    <a href={`https://wa.me/55${storeWhatsapp.replace(/\D/g, '')}?text=Olá! Vim pelo site da vitrine e gostaria de atendimento.`} target="_blank" rel="noreferrer" className="btn-primary px-6 py-2.5 text-xs font-bold md:flex hidden items-center gap-2">
-                        <MessageSquare size={16} />
-                        Falar com Consultor
-                    </a>
                 </div>
             </nav>
 
@@ -134,10 +146,10 @@ export default function Showcase() {
                         Explore nossa curadoria de veículos selecionados com garantia de procedência e as melhores condições de financiamento.
                     </motion.p>
                 </div>
-            </section>
+            </section >
 
             {/* Filter Bar */}
-            <div className="max-w-7xl mx-auto px-6 sticky top-20 z-50 mt-12 mb-16">
+            < div className="max-w-7xl mx-auto px-6 sticky top-20 z-50 mt-12 mb-16" >
                 <div className="glass-card p-4 flex flex-col md:flex-row items-center gap-4 bg-slate-900/60 backdrop-blur-2xl border-white/10 shadow-2xl">
                     <div className="relative flex-1 group w-full">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-red transition-colors" size={20} />
@@ -167,114 +179,116 @@ export default function Showcase() {
                         ))}
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Grid de Veículos */}
-            <main className="max-w-7xl mx-auto px-6 pb-32">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-32 gap-6">
-                        <div className="w-12 h-12 border-4 border-brand-red/20 border-t-brand-red rounded-full animate-spin" />
-                        <p className="text-white/30 text-sm font-black uppercase tracking-[0.2em] animate-pulse">Consultando estoque...</p>
-                    </div>
-                ) : filteredVehicles.length === 0 ? (
-                    <div className="py-32 text-center space-y-6 max-w-sm mx-auto">
-                        <div className="w-24 h-24 bg-white/5 rounded-[40px] flex items-center justify-center mx-auto border border-white/5 rotate-12">
-                            <Car size={40} className="text-white/10 -rotate-12" />
+            < main className="max-w-7xl mx-auto px-6 pb-32" >
+                {
+                    loading ? (
+                        <div className="flex flex-col items-center justify-center py-32 gap-6" >
+                            <div className="w-12 h-12 border-4 border-brand-red/20 border-t-brand-red rounded-full animate-spin" />
+                            <p className="text-white/30 text-sm font-black uppercase tracking-[0.2em] animate-pulse">Consultando estoque...</p>
                         </div>
-                        <h3 className="text-2xl font-display font-bold text-white">Nenhum veículo disponível</h3>
-                        <p className="text-white/30 text-sm">Não encontramos nenhum carro correspondente à sua busca no momento.</p>
-                        <button
-                            onClick={() => { setSearchTerm(''); setSelectedCategory('Todos'); }}
-                            className="text-brand-red font-black text-[10px] uppercase tracking-widest hover:underline"
-                        >
-                            Limpar filtros
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <AnimatePresence mode='popLayout'>
-                            {filteredVehicles.map((v, i) => (
-                                <motion.div
-                                    key={v.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                >
-                                    <Link
-                                        to={`/v/${v.id}`}
-                                        className="group block glass-card overflow-hidden bg-slate-900/40 border-white/5 hover:border-brand-red/30 transition-all duration-500 shadow-xl"
+                    ) : filteredVehicles.length === 0 ? (
+                        <div className="py-32 text-center space-y-6 max-w-sm mx-auto">
+                            <div className="w-24 h-24 bg-white/5 rounded-[40px] flex items-center justify-center mx-auto border border-white/5 rotate-12">
+                                <Car size={40} className="text-white/10 -rotate-12" />
+                            </div>
+                            <h3 className="text-2xl font-display font-bold text-white">Nenhum veículo disponível</h3>
+                            <p className="text-white/30 text-sm">Não encontramos nenhum carro correspondente à sua busca no momento.</p>
+                            <button
+                                onClick={() => { setSearchTerm(''); setSelectedCategory('Todos'); }}
+                                className="text-brand-red font-black text-[10px] uppercase tracking-widest hover:underline"
+                            >
+                                Limpar filtros
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <AnimatePresence mode='popLayout'>
+                                {filteredVehicles.map((v, i) => (
+                                    <motion.div
+                                        key={v.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 30 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.05 }}
                                     >
-                                        <div className="aspect-[16/10] overflow-hidden relative">
-                                            <img
-                                                src={v.data.images[0]}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                                alt={v.data.model}
-                                            />
-                                            <div className="absolute top-4 left-4 z-10">
-                                                <span className={cn(
-                                                    "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest backdrop-blur-md border shadow-lg",
-                                                    v.status === 'Disponível' ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                                                )}>
-                                                    {v.status}
-                                                </span>
-                                            </div>
-                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
-
-                                            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                                                <span className="text-white font-display font-black text-2xl tracking-tighter">
-                                                    {formatCurrency(Number(v.data.price))}
-                                                </span>
-                                                <div className="bg-brand-red text-white p-2 rounded-xl shadow-lg shadow-brand-red/30">
-                                                    <ArrowRight size={20} />
+                                        <Link
+                                            to={`/v/${v.id}`}
+                                            className="group block glass-card overflow-hidden bg-slate-900/40 border-white/5 hover:border-brand-red/30 transition-all duration-500 shadow-xl"
+                                        >
+                                            <div className="aspect-[16/10] overflow-hidden relative">
+                                                <img
+                                                    src={v.data.images[0]}
+                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                    alt={v.data.model}
+                                                />
+                                                <div className="absolute top-4 left-4 z-10">
+                                                    <span className={cn(
+                                                        "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest backdrop-blur-md border shadow-lg",
+                                                        v.status === 'Disponível' ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                                                    )}>
+                                                        {v.status}
+                                                    </span>
                                                 </div>
-                                            </div>
-                                        </div>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
 
-                                        <div className="p-8 space-y-6">
-                                            <div className="space-y-1">
-                                                <h3 className="text-2xl font-display font-black text-white group-hover:text-brand-red transition-colors leading-tight">
-                                                    {v.data.model}
-                                                </h3>
-                                                <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{v.data.version}</p>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4 pb-6 border-b border-white/5">
-                                                <div className="flex items-center gap-3 text-white/40">
-                                                    <div className="p-2 bg-white/5 rounded-lg">
-                                                        <Calendar size={14} className="text-brand-red" />
+                                                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                                                    <span className="text-white font-display font-black text-2xl tracking-tighter">
+                                                        {formatCurrency(Number(v.data.price))}
+                                                    </span>
+                                                    <div className="bg-brand-red text-white p-2 rounded-xl shadow-lg shadow-brand-red/30">
+                                                        <ArrowRight size={20} />
                                                     </div>
-                                                    <span className="text-xs font-black tabular-nums">{v.data.year}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3 text-white/40">
-                                                    <div className="p-2 bg-white/5 rounded-lg">
-                                                        <Gauge size={14} className="text-brand-red" />
-                                                    </div>
-                                                    <span className="text-xs font-black tabular-nums">{formatKM(Number(v.data.km))}</span>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-white/20">
-                                                    <MapPin size={12} />
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest">{v.data.city}</span>
+                                            <div className="p-8 space-y-6">
+                                                <div className="space-y-1">
+                                                    <h3 className="text-2xl font-display font-black text-white group-hover:text-brand-red transition-colors leading-tight">
+                                                        {v.data.model}
+                                                    </h3>
+                                                    <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{v.data.version}</p>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-brand-red font-black text-[10px] uppercase tracking-widest">
-                                                    Ver Detalhes
-                                                    <ChevronRight size={14} />
+
+                                                <div className="grid grid-cols-2 gap-4 pb-6 border-b border-white/5">
+                                                    <div className="flex items-center gap-3 text-white/40">
+                                                        <div className="p-2 bg-white/5 rounded-lg">
+                                                            <Calendar size={14} className="text-brand-red" />
+                                                        </div>
+                                                        <span className="text-xs font-black tabular-nums">{v.data.year}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-white/40">
+                                                        <div className="p-2 bg-white/5 rounded-lg">
+                                                            <Gauge size={14} className="text-brand-red" />
+                                                        </div>
+                                                        <span className="text-xs font-black tabular-nums">{formatKM(Number(v.data.km))}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2 text-white/20">
+                                                        <MapPin size={12} />
+                                                        <span className="text-[10px] font-bold uppercase tracking-widest">{v.data.city}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-brand-red font-black text-[10px] uppercase tracking-widest">
+                                                        Ver Detalhes
+                                                        <ChevronRight size={14} />
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
-                )}
-            </main>
+                                        </Link>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    )
+                }
+            </main >
 
             {/* Footer */}
-            <footer className="bg-slate-950 border-t border-white/5 py-20 px-6">
+            < footer className="bg-slate-950 border-t border-white/5 py-20 px-6" >
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
                     <div className="space-y-6 max-w-xs">
                         <div className="flex items-center gap-3 justify-center md:justify-start">
@@ -313,10 +327,10 @@ export default function Showcase() {
                         © 2024 {storeName}. Todos os direitos reservados.
                     </p>
                 </div>
-            </footer>
+            </footer >
 
             {/* Sticky WhatsApp Base */}
-            <motion.a
+            < motion.a
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 href={`https://wa.me/55${storeWhatsapp.replace(/\D/g, '')}?text=Olá! Vim pelo site da vitrine e gostaria de atendimento.`}
@@ -326,7 +340,7 @@ export default function Showcase() {
             >
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-brand-dark"></div>
                 <MessageSquare size={28} className="text-white" />
-            </motion.a>
-        </div>
+            </motion.a >
+        </div >
     );
 }
