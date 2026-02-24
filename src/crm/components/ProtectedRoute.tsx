@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem('auth_token');
-    const isAuthenticated = token && token.startsWith('autopage_');
+    const isAuthenticated = token && (token.startsWith('autopage_') || token.startsWith('autopage|'));
     const location = useLocation();
 
     if (!isAuthenticated) {
