@@ -8,13 +8,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     if (req.method === 'POST') {
-        // Lead creation is partly public (from vehicle showcase page)
         const { vehicleId, vehicleName, clientName, clientEmail, clientPhone, origin, storeId: bodyStoreId } = req.body;
 
-        // Extract storeId from token (if exists) or from body (for public leads)
         const auth = req.headers?.authorization || req.headers?.['Authorization'];
         const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
-        const parts = token.split('_');
+        const parts = token.split('|');
         const tokenStoreId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
 
         const targetStoreId = tokenStoreId || bodyStoreId;
@@ -35,10 +33,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ success: true });
     }
 
-    // GET requires auth
     const auth = req.headers?.authorization || req.headers?.['Authorization'];
     const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
-    const parts = token.split('_');
+    const parts = token.split('|');
     const storeId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
 
     if (!storeId) return res.status(401).json({ error: 'Unauthorized' });

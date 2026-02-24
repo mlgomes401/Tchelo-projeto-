@@ -9,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const auth = req.headers?.authorization || req.headers?.['Authorization'];
     const token = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
-    const parts = token.split('_');
+    const parts = token.split('|');
     const storeId = (parts.length >= 4 && parts[0] === 'autopage') ? parts[1] : null;
 
     if (!storeId) return res.status(401).json({ error: 'Unauthorized' });
@@ -26,8 +26,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'PATCH') {
         const settings = req.body;
         for (const [key, value] of Object.entries(settings)) {
-            const { error } = await supabase.from('settings').upsert({ key, value, store_id: storeId });
+            const { error } = await supabase.from('settings').upsert({ key, value, store_id: storeId }, { onConflict: 'key,store_id' });
             if (error) {
+                // Compatibility for older tables without unique constraints on key,store_id if needed
                 await supabase.from('settings').update({ value }).eq('key', key).eq('store_id', storeId);
             }
         }

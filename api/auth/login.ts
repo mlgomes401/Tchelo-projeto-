@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!valid) return res.status(401).json({ error: 'Credenciais inválidas' });
 
         const storeId = user.store_id || 'store_demo';
-        const token = `autopage_${storeId}_${user.role}_${user.id}`;
+        const token = `autopage|${storeId}|${user.role}|${user.id}`;
 
         return res.json({
             token,

@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
         if (userErr) return res.status(500).json({ error: 'Erro ao criar usuário' });
 
-        const token = `autopage_${storeId}_admin_${userId}`;
+        const token = `autopage|${storeId}|admin|${userId}`;
         return res.json({
             token,
             storeId,
