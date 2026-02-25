@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const settings = req.body;
         for (const [key, value] of Object.entries(settings)) {
             // Check if exists
-            const { data } = await supabase.from('settings').select('key').eq('key', key).eq('store_id', storeId).single();
+            const { data } = await supabase.from('settings').select('key').eq('key', key).eq('store_id', storeId).maybeSingle();
 
             if (data) {
                 // Update

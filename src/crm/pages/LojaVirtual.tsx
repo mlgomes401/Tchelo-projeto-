@@ -24,12 +24,8 @@ export default function LojaVirtual() {
     const [storeId, setStoreId] = useState('store_demo');
 
     useEffect(() => {
-        // Obter storeId do token
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-            const parts = token.split('|').length >= 2 ? token.split('|') : token.split('_');
-            if (parts.length >= 2) setStoreId(parts[1]);
-        }
+        const savedStoreId = localStorage.getItem('store_id');
+        if (savedStoreId) setStoreId(savedStoreId);
         // Fetch Settings
         fetch('/api/settings')
             .then(res => {

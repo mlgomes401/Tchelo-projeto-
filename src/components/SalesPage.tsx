@@ -415,34 +415,6 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
         </motion.div>
       </section>
 
-      <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
-        {finalInstagram && (
-          <motion.a
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1 }}
-            href={`https://instagram.com/${finalInstagram.replace('@', '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-gradient-to-tr from-pink-500 to-purple-600 p-4 rounded-full shadow-2xl shadow-purple-500/30 hover:scale-110 transition-transform flex items-center justify-center group relative cursor-pointer"
-          >
-            <Instagram size={28} className="text-white" />
-            <span className="absolute right-full mr-4 bg-white text-slate-900 px-3 py-1.5 rounded-xl text-xs font-black shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Siga nossa loja</span>
-          </motion.a>
-        )}
-        <motion.a
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleLeadCapture}
-          className="bg-[#25D366] p-4 rounded-full shadow-2xl shadow-[#25D366]/30 hover:scale-110 transition-transform flex items-center justify-center group relative cursor-pointer"
-        >
-          <MessageCircle size={32} className="text-white" />
-          <span className="absolute right-full mr-4 bg-white text-slate-900 px-3 py-1.5 rounded-xl text-xs font-black shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Falar no WhatsApp</span>
-        </motion.a>
-      </div>
 
       {/* Lightbox */}
       <AnimatePresence>

@@ -329,18 +329,7 @@ export default function Showcase() {
                 </div>
             </footer >
 
-            {/* Sticky WhatsApp Base */}
-            < motion.a
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                href={`https://wa.me/55${storeWhatsapp.replace(/\D/g, '')}?text=Olá! Vim pelo site da vitrine e gostaria de atendimento.`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="fixed bottom-8 right-8 z-50 bg-[#25D366] p-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center md:hidden"
-            >
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-brand-dark"></div>
-                <MessageSquare size={28} className="text-white" />
-            </motion.a >
+
         </div >
     );
 }

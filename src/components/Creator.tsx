@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { 
-  Car, 
-  Calendar, 
-  Gauge, 
-  Tag, 
-  MapPin, 
-  MessageCircle, 
+import {
+  Car,
+  Calendar,
+  Gauge,
+  Tag,
+  MapPin,
+  MessageCircle,
   Sparkles,
   Rocket,
   CheckCircle2,
@@ -26,13 +26,14 @@ import { cn } from '../lib/utils';
 import { generateStandaloneHTML } from '../lib/htmlGenerator';
 
 import { Link } from 'react-router-dom';
+import { getAuthHeaders } from '../lib/api';
 
 export function Creator() {
   const [step, setStep] = useState<'form' | 'preview'>('form');
   const [isSaving, setIsSaving] = useState(false);
   const [generatedId, setGeneratedId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const [data, setData] = useState<VehicleData>({
     model: '',
     year: '',
@@ -51,7 +52,7 @@ export function Creator() {
 
   const fetchVehicles = async () => {
     try {
-      const res = await fetch('/api/vehicles');
+      const res = await fetch('/api/vehicles', { headers: getAuthHeaders() });
       const data = await res.json();
       setVehicles(data);
     } catch (err) {
@@ -100,12 +101,12 @@ export function Creator() {
       firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    
+
     setIsSaving(true);
     try {
       const response = await fetch('/api/vehicles', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleData: data })
       });
       const result = await response.json();
@@ -151,7 +152,7 @@ export function Creator() {
       <div className="relative">
         <div className="fixed top-0 left-0 right-0 z-[60] bg-brand-dark/90 backdrop-blur-xl border-b border-white/10 p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setStep('form')}
               className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
             >
@@ -165,18 +166,18 @@ export function Creator() {
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2 flex-wrap justify-center">
             {generatedId && (
               <>
-                <button 
+                <button
                   onClick={copyLink}
                   className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all"
                 >
                   <Share2 size={18} />
                   Copiar Link
                 </button>
-                <a 
+                <a
                   href={`/v/${generatedId}`}
                   target="_blank"
                   className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all"
@@ -186,14 +187,14 @@ export function Creator() {
                 </a>
               </>
             )}
-            <button 
+            <button
               onClick={copyCode}
               className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all"
             >
               <Copy size={18} />
               HTML
             </button>
-            <button 
+            <button
               onClick={downloadHTML}
               className="flex items-center gap-2 bg-brand-red hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-lg shadow-brand-red/20 transition-all"
             >
@@ -213,27 +214,27 @@ export function Creator() {
     <div className="min-h-screen bg-brand-dark py-12 px-6">
       <div className="max-w-4xl mx-auto space-y-12">
         <header className="text-center space-y-4">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="inline-flex items-center justify-center p-3 bg-brand-red rounded-2xl mb-4"
           >
             <Rocket className="text-white w-8 h-8" />
           </motion.div>
-          
+
           <div className="flex flex-col items-center gap-2">
             <h1 className="text-4xl md:text-6xl font-display font-extrabold tracking-tight">
               AutoPage <span className="text-brand-red">Pro</span>
             </h1>
             <div className="flex items-center gap-6">
-              <Link 
-                to="/crm" 
+              <Link
+                to="/crm"
                 className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-brand-red transition-colors"
               >
                 <Users size={14} />
                 Dashboard CRM
               </Link>
-              <button 
+              <button
                 onClick={() => setShowVehicles(!showVehicles)}
                 className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-brand-red transition-colors"
               >
@@ -248,7 +249,7 @@ export function Creator() {
         </header>
 
         {showVehicles && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="glass-card p-8 space-y-6"
@@ -262,7 +263,7 @@ export function Creator() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="grid gap-4">
               {vehicles.length === 0 ? (
                 <p className="text-center py-8 text-white/30">Nenhum veículo cadastrado ainda.</p>
@@ -279,7 +280,7 @@ export function Creator() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <select 
+                      <select
                         value={v.status}
                         onChange={async (e) => {
                           await fetch(`/api/vehicles/${v.id}`, {
@@ -312,7 +313,7 @@ export function Creator() {
               <Car className="text-brand-red" />
               Informações do Veículo
             </h2>
-            
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">Modelo</label>
@@ -368,8 +369,8 @@ export function Creator() {
             {errors.images && <p className="text-red-500 text-sm flex items-center gap-1"><AlertTriangle size={16} /> {errors.images}</p>}
           </div>
 
-          <button 
-            onClick={handleSave} 
+          <button
+            onClick={handleSave}
             disabled={isSaving}
             className="btn-primary w-full py-4 text-xl"
           >
