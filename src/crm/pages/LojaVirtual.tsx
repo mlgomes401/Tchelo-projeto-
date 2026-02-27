@@ -12,14 +12,20 @@ import {
 import PageHeader from '../components/PageHeader';
 import { cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
+import { Sparkles } from 'lucide-react';
 
 export default function LojaVirtual() {
     const [settings, setSettings] = useState({
         storeName: 'AutoPage Pro',
-        primaryColor: '#E31837'
+        primaryColor: '#E31837',
+        whatsapp: '',
+        instagram: '',
+        heroTitle: 'Encontre seu próximo<br />veículo <span className="text-brand-red">Premium</span>',
+        welcomeText: 'Explore nossa curadoria de veículos selecionados com garantia de procedência e as melhores condições de financiamento.'
     });
-    const [stats, setStats] = useState({ activeCars: 0, totalViews: 1245 });
+    const [stats, setStats] = useState({ activeCars: 0, totalViews: 0 });
     const [isSaving, setIsSaving] = useState(false);
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [storeId, setStoreId] = useState('store_demo');
 
@@ -27,7 +33,9 @@ export default function LojaVirtual() {
         const savedStoreId = localStorage.getItem('store_id');
         if (savedStoreId) setStoreId(savedStoreId);
         // Fetch Settings
-        fetch('/api/settings')
+        fetch('/api/settings', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        })
             .then(res => {
                 if (!res.ok) throw new Error('Falha ao carregar configurações');
                 return res.json();
@@ -35,6 +43,9 @@ export default function LojaVirtual() {
             .then(data => {
                 if (data && Object.keys(data).length > 0) {
                     setSettings(prev => ({ ...prev, ...data }));
+                    if (data.views) {
+                        setStats(prev => ({ ...prev, totalViews: parseInt(data.views, 10) }));
+                    }
                 }
                 setIsLoaded(true);
             })
@@ -44,7 +55,9 @@ export default function LojaVirtual() {
             });
 
         // Fetch Inventory Stats
-        fetch('/api/vehicles')
+        fetch('/api/vehicles', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        })
             .then(res => {
                 if (!res.ok) throw new Error('API not ready');
                 return res.json();
@@ -67,15 +80,55 @@ export default function LojaVirtual() {
                 },
                 body: JSON.stringify(settings)
             });
-            if (!res.ok) throw new Error('Erro ao salvar configurações');
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Erro ao salvar configurações');
+            }
             alert('Configurações salvas com sucesso!');
-            // Reload to update sidebar if name changed
             window.location.reload();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert('Falha ao salvar. Tente novamente.');
+            alert('Falha ao salvar: ' + err.message);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleGenerateAI = async () => {
+        setIsGeneratingAI(true);
+        try {
+            const res = await fetch('/api/vehicles?storeId=' + storeId, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+            });
+            const vehicles = await res.json();
+            const featured = vehicles.filter((v: any) => v.data && v.data.featured).slice(0, 5).map((v: any) => `${v.data.model} ${v.data.year}`).join(', ');
+
+            const promptText = featured
+                ? `Crie um pequeno texto de boas vindas (max 2 parágrafos) para uma vitrine de carros contendo estes modelos em destaque: ${featured}. Use um tom premium e chamativo.`
+                : `Crie um pequeno texto de boas vindas (max 2 parágrafos) genérico e premium para uma vitrine de carros importados e exclusivos.`;
+
+            const aiRes = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
+                body: JSON.stringify({ prompt: promptText })
+            });
+            const data = await aiRes.json();
+            if (!aiRes.ok) throw new Error(data.error || 'Falha na comunicação com a API de IA');
+
+            const textResult = data.text || data.description;
+            if (textResult) {
+                setSettings({ ...settings, welcomeText: textResult });
+            } else {
+                alert('A IA não retornou um texto válido. Verifique as chaves de API.');
+            }
+        } catch (e: any) {
+            console.error(e);
+            alert('Erro ao comunicar com a IA: ' + e.message);
+        } finally {
+            setIsGeneratingAI(false);
         }
     };
 
@@ -171,42 +224,61 @@ export default function LojaVirtual() {
                                 <p className="text-[10px] text-white/30 font-medium ml-4 mt-2">Este nome aparecerá no cabeçalho e rodapé da sua vitrine pública.</p>
                             </div>
 
-                            <div className="pt-6 border-t border-white/5 space-y-4">
-                                <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                    <Palette size={14} className="text-white/40" />
-                                    Aparência
-                                </h4>
-                                <div className="space-y-6">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Cor Principal da Marca</label>
-                                        <div className="flex items-center gap-4 ml-4">
-                                            <input
-                                                type="color"
-                                                value={settings.primaryColor}
-                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-                                                className="w-16 h-16 bg-transparent border-none cursor-pointer"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={settings.primaryColor}
-                                                onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-                                                className="bg-slate-950 border border-white/10 rounded-2xl py-3 px-6 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-mono"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button className="flex items-center justify-between p-4 rounded-3xl border bg-brand-red/10 border-brand-red/30 text-white transition-all">
-                                            <span className="text-xs font-bold">Modo Escuro (Elegante)</span>
-                                            <div className="w-4 h-4 rounded-full bg-brand-red" />
-                                        </button>
-                                        <button disabled className="flex items-center justify-between p-4 rounded-3xl border bg-white/5 border-white/5 text-white/30 cursor-not-allowed">
-                                            <span className="text-xs font-bold">Modo Claro (Em breve)</span>
-                                            <div className="w-4 h-4 rounded-full bg-white/10" />
-                                        </button>
-                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">WhatsApp (Apenas Números)</label>
+                                    <input
+                                        value={settings.whatsapp}
+                                        onChange={e => setSettings({ ...settings, whatsapp: e.target.value })}
+                                        className="w-full bg-slate-950 border border-white/10 rounded-3xl py-5 px-8 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-medium"
+                                        placeholder="Ex: 11999999999"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Instagram (Opcional)</label>
+                                    <input
+                                        value={settings.instagram}
+                                        onChange={e => setSettings({ ...settings, instagram: e.target.value })}
+                                        className="w-full bg-slate-950 border border-white/10 rounded-3xl py-5 px-8 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-medium"
+                                        placeholder="Ex: @sua_loja"
+                                    />
                                 </div>
                             </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Título Principal (Vitrine)</label>
+                                <input
+                                    value={settings.heroTitle}
+                                    onChange={e => setSettings({ ...settings, heroTitle: e.target.value })}
+                                    className="w-full bg-slate-950 border border-white/10 rounded-3xl py-5 px-8 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-medium"
+                                    placeholder="Ex: Encontre seu próximo veículo Premium"
+                                />
+                                <p className="text-[10px] text-white/30 font-medium ml-4 mt-2">Dica: use &lt;br&gt; para pular linha. Ex: Veículos&lt;br&gt;Exclusivos.</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between ml-4">
+                                    <label className="text-[10px] font-black text-white/20 uppercase tracking-widest">Texto de Boas Vindas (Vitrine)</label>
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerateAI}
+                                        disabled={isGeneratingAI}
+                                        className="flex items-center gap-1.5 text-[10px] font-bold text-purple-400 hover:text-purple-300 uppercase tracking-widest disabled:opacity-50"
+                                    >
+                                        <Sparkles size={12} />
+                                        {isGeneratingAI ? 'Gerando...' : 'Gerar com IA'}
+                                    </button>
+                                </div>
+                                <textarea
+                                    value={settings.welcomeText || ''}
+                                    onChange={e => setSettings({ ...settings, welcomeText: e.target.value })}
+                                    rows={4}
+                                    className="w-full bg-slate-950 border border-white/10 rounded-3xl py-5 px-8 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-medium leading-relaxed"
+                                    placeholder="Escreva algo chamativo, ou use a IA para gerar."
+                                />
+                                <p className="text-[10px] text-white/30 font-medium ml-4 mt-2">Este texto aparece no banner principal da vitrine. Se gerar com a IA, ela lerá os carros que você marcou como "Destaque".</p>
+                            </div>
+
                         </div>
                     </div>
                 </div>

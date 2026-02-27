@@ -20,6 +20,8 @@ export default function Configuracao() {
         storeName: '',
         primaryColor: '#E31837',
         contactEmail: '',
+        whatsapp: '',
+        instagram: '',
         enableNotifications: true
     });
     const [isSaving, setIsSaving] = useState(false);
@@ -105,6 +107,30 @@ export default function Configuracao() {
                                     placeholder="Ex: AutoPage Elite"
                                 />
                                 <p className="text-[9px] text-white/10 font-medium ml-4 uppercase tracking-widest italic">Este nome aparecerá na vitrine e nos títulos das páginas.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">WhatsApp da Loja</label>
+                                    <input
+                                        value={settings.whatsapp}
+                                        onChange={e => setSettings({ ...settings, whatsapp: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-8 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-bold"
+                                        placeholder="(11) 90000-0000"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Instagram da Loja</label>
+                                    <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl px-4 focus-within:border-brand-red/50 transition-all">
+                                        <span className="text-white/40">@</span>
+                                        <input
+                                            value={settings.instagram}
+                                            onChange={e => setSettings({ ...settings, instagram: e.target.value })}
+                                            className="w-full bg-transparent py-5 px-4 text-white text-sm outline-none font-bold"
+                                            placeholder="sua_loja"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-8">

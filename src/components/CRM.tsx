@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Users, 
-  Clock, 
-  CheckCircle2, 
-  Trash2, 
-  ExternalLink, 
-  Loader2, 
+import {
+  Users,
+  Clock,
+  CheckCircle2,
+  Trash2,
+  ExternalLink,
+  Loader2,
   AlertCircle,
   ArrowLeft,
   Filter,
@@ -22,13 +22,13 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn, formatCurrency } from '../lib/utils';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   AreaChart,
   Area
@@ -85,7 +85,7 @@ export function CRM() {
 
   const updateStatus = async (id: number, status: string) => {
     try {
-      await fetch(`/api/leads/${id}`, {
+      await fetch(`/api/leads?id=${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -100,7 +100,7 @@ export function CRM() {
   const deleteLead = async (id: number) => {
     if (!confirm('Excluir este lead?')) return;
     try {
-      await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+      await fetch(`/api/leads?id=${id}`, { method: 'DELETE' });
       setLeads(leads.filter(l => l.id !== id));
       fetchData();
     } catch (err) {
@@ -110,8 +110,8 @@ export function CRM() {
 
   const filteredLeads = leads.filter(l => {
     const matchesFilter = filter === 'Todos' || l.status === filter;
-    const matchesSearch = l.vehicle_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         l.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = l.vehicle_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -140,12 +140,12 @@ export function CRM() {
             </h1>
             <p className="text-white/50">Visão geral da sua concessionária e gestão de leads.</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
-             <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 flex items-center gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-widest text-white/70">Sistema Online</span>
-             </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 flex items-center gap-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest text-white/70">Sistema Online</span>
+            </div>
           </div>
         </header>
 
@@ -157,7 +157,7 @@ export function CRM() {
             { label: 'Total Leads', value: stats?.totalLeads, icon: MessageSquare, color: 'text-brand-red' },
             { label: 'Taxa Conversão', value: `${stats?.conversionRate}%`, icon: TrendingUp, color: 'text-purple-500' },
           ].map((stat, i) => (
-            <motion.div 
+            <motion.div
               key={i}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -190,14 +190,14 @@ export function CRM() {
                 <AreaChart data={stats?.monthlyData || []}>
                   <defs>
                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#E31D2D" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#E31D2D" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#E31D2D" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#E31D2D" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                   <XAxis dataKey="month" stroke="#ffffff40" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#ffffff40" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid #ffffff10', borderRadius: '12px' }}
                     itemStyle={{ color: '#fff' }}
                   />
@@ -225,7 +225,7 @@ export function CRM() {
                     <span className="font-bold">{item.value}%</span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${item.value}%` }}
                       className={cn("h-full rounded-full", item.color)}
@@ -248,8 +248,8 @@ export function CRM() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Buscar lead ou veículo..."
                   className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-brand-red transition-all w-64"
                   value={searchTerm}
@@ -301,9 +301,9 @@ export function CRM() {
                         <span className={cn(
                           "px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
                           lead.status === 'Novo' ? "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20" :
-                          lead.status === 'Em Atendimento' ? "bg-blue-500/10 text-blue-500 border border-blue-500/20" :
-                          lead.status === 'Fechado' ? "bg-green-500/10 text-green-500 border border-green-500/20" :
-                          "bg-red-500/10 text-red-500 border border-red-500/20"
+                            lead.status === 'Em Atendimento' ? "bg-blue-500/10 text-blue-500 border border-blue-500/20" :
+                              lead.status === 'Fechado' ? "bg-green-500/10 text-green-500 border border-green-500/20" :
+                                "bg-red-500/10 text-red-500 border border-red-500/20"
                         )}>
                           {lead.status}
                         </span>
@@ -335,13 +335,13 @@ export function CRM() {
                       <option value="Perdido">Perdido</option>
                     </select>
 
-                    <button 
+                    <button
                       onClick={() => setSelectedLead(lead)}
                       className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors"
                     >
                       <MoreVertical size={20} />
                     </button>
-                    
+
                     <a
                       href={`https://wa.me/55${(lead.client_phone || '').replace(/\D/g, '')}`}
                       target="_blank"
@@ -360,18 +360,18 @@ export function CRM() {
       {/* Lead Detail Modal */}
       <AnimatePresence>
         {selectedLead && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               className="glass-card p-8 w-full max-w-2xl space-y-8 relative"
             >
-              <button 
+              <button
                 onClick={() => setSelectedLead(null)}
                 className="absolute top-4 right-4 text-white/50 hover:text-white"
               >
@@ -420,12 +420,12 @@ export function CRM() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h4 className="text-xs font-bold uppercase tracking-widest text-white/30">Notas do Vendedor</h4>
-                    <textarea 
+                    <textarea
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-brand-red transition-colors h-32 resize-none"
                       placeholder="Adicione observações sobre a negociação..."
                       defaultValue={selectedLead.notes}
                       onBlur={(e) => {
-                        fetch(`/api/leads/${selectedLead.id}`, {
+                        fetch(`/api/leads?id=${selectedLead.id}`, {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ notes: e.target.value })
@@ -437,13 +437,13 @@ export function CRM() {
               </div>
 
               <div className="pt-6 border-t border-white/10 flex justify-between items-center">
-                <button 
+                <button
                   onClick={() => deleteLead(selectedLead.id)}
                   className="flex items-center gap-2 text-red-500 hover:text-red-400 transition-colors text-sm font-bold"
                 >
                   <Trash2 size={18} /> Excluir Lead
                 </button>
-                <a 
+                <a
                   href={`https://wa.me/55${(selectedLead.client_phone || '').replace(/\D/g, '')}`}
                   target="_blank"
                   className="btn-primary px-8 py-3"

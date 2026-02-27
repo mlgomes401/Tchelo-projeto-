@@ -30,13 +30,21 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [showLeadForm, setShowLeadForm] = useState(false);
-  const [leadInfo, setLeadInfo] = useState({ name: '', phone: '', email: '' });
+  const [leadInfo, setLeadInfo] = useState({ name: '', phone: '', email: '', tradeIn: '', financing: '' });
   const [storeName, setStoreName] = useState('AutoPage Elite');
   const [storeWhatsapp, setStoreWhatsapp] = useState('');
   const [storeInstagram, setStoreInstagram] = useState('');
 
   useEffect(() => {
-    const sId = (data as any).store_id || 'store_demo';
+    let sId = (data as any).store_id;
+    if (!sId && typeof window !== 'undefined') {
+      const token = localStorage.getItem('autopage_token') || localStorage.getItem('token');
+      if (token && token.includes('|')) {
+        sId = token.split('|')[1];
+      }
+    }
+    sId = sId || 'store_demo';
+
     fetch(`/api/settings?storeId=${sId}`)
       .then(res => res.json())
       .then(d => {
@@ -62,6 +70,16 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
     }
 
     try {
+      // Rastreador Meta Pixel (Etapa 4)
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'Lead', {
+          content_name: `${data.model} ${data.version}`,
+          content_category: 'Vehicle'
+        });
+      }
+
+      const notes = `Tem interesse em troca: ${leadInfo.tradeIn || 'Não informado'} | Pretende financiar: ${leadInfo.financing || 'Não informado'}`;
+
       await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,7 +89,8 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
           clientName: leadInfo.name,
           clientEmail: leadInfo.email,
           clientPhone: leadInfo.phone,
-          origin: 'Site'
+          origin: 'Site',
+          notes: notes
         })
       });
       // After capture, redirect to WhatsApp
@@ -85,21 +104,35 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
 
   const toggleZoom = () => setZoom(prev => prev === 1 ? 2 : 1);
 
+  const images = data.images || [];
+
   useEffect(() => {
-    if (data.images.length > 1 && !isLightboxOpen) {
+    // Rastreador Meta Pixel (Etapa 4) - ViewContent
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'ViewContent', {
+        content_name: `${data.model} ${data.version}`,
+        content_category: 'Vehicle',
+        value: Number(data.price),
+        currency: 'BRL'
+      });
+    }
+  }, [data.model, data.version, data.price]);
+
+  useEffect(() => {
+    if (images.length > 1 && !isLightboxOpen) {
       const timer = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % data.images.length);
+        setCurrentIndex((prev) => (prev + 1) % images.length);
       }, 5000);
       return () => clearInterval(timer);
     }
-  }, [data.images.length, isLightboxOpen]);
+  }, [images.length, isLightboxOpen]);
 
   const next = () => {
-    setCurrentIndex((prev) => (prev + 1) % data.images.length);
+    setCurrentIndex((prev) => (prev + 1) % images.length);
     setZoom(1);
   };
   const prev = () => {
-    setCurrentIndex((prev) => (prev - 1 + data.images.length) % data.images.length);
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
     setZoom(1);
   };
 
@@ -169,10 +202,34 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
                     onChange={e => setLeadInfo(prev => ({ ...prev, email: e.target.value }))}
                   />
                 </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-white/40">Tem veículo na troca?</label>
+                  <select
+                    className="input-field w-full"
+                    value={leadInfo.tradeIn}
+                    onChange={e => setLeadInfo(prev => ({ ...prev, tradeIn: e.target.value }))}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Sim">Sim, tenho carro na troca</option>
+                    <option value="Não">Não</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-white/40">Pretende Financiar?</label>
+                  <select
+                    className="input-field w-full"
+                    value={leadInfo.financing}
+                    onChange={e => setLeadInfo(prev => ({ ...prev, financing: e.target.value }))}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Sim">Sim, quero simular</option>
+                    <option value="A Vista">Pagamento à vista</option>
+                  </select>
+                </div>
                 <button
                   onClick={() => handleLeadCapture()}
                   disabled={!leadInfo.name || !leadInfo.phone}
-                  className="btn-primary w-full py-4 text-lg disabled:opacity-50"
+                  className="btn-primary w-full py-4 text-lg disabled:opacity-50 mt-4"
                 >
                   <MessageCircle size={20} />
                   Abrir WhatsApp
@@ -206,16 +263,18 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
       {/* Hero Section */}
       <section className="relative h-[70vh] md:h-[85vh] overflow-hidden">
         <AnimatePresence mode="wait">
-          <motion.img
-            key={currentIndex}
-            src={data.images[currentIndex]}
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute inset-0 w-full h-full object-cover"
-            alt={data.model}
-          />
+          {images.length > 0 && (
+            <motion.img
+              key={currentIndex}
+              src={images[currentIndex]}
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0 w-full h-full object-cover"
+              alt={data.model}
+            />
+          )}
         </AnimatePresence>
 
         <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-black/30" />
@@ -295,7 +354,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
             }
           }}
         >
-          {data.images.map((img, idx) => (
+          {images.map((img, idx) => (
             <motion.div
               key={idx}
               variants={{
@@ -385,16 +444,17 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
               </div>
               <div className="flex items-center gap-4 text-white/70">
                 <MessageCircle className="text-brand-red" />
-                <span>WhatsApp: {finalWhatsapp}</span>
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" onClick={handleLeadCapture} className="hover:text-brand-red transition-colors">
+                  WhatsApp: {finalWhatsapp}
+                </a>
               </div>
               {finalInstagram && (
-                <a href={`https://instagram.com/${finalInstagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center justify-between p-4 bg-gradient-to-tr from-pink-600 to-purple-600 rounded-xl hover:scale-105 transition-transform group">
-                  <div className="flex items-center gap-3">
-                    <Instagram className="text-white" />
-                    <span className="font-bold text-white">@{finalInstagram.replace('@', '')}</span>
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/80 group-hover:text-white">Seguir</span>
-                </a>
+                <div className="flex items-center gap-4 text-white/70">
+                  <Instagram className="text-brand-red" />
+                  <a href={`https://instagram.com/${finalInstagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="hover:text-brand-red transition-colors">
+                    Instagram: {finalInstagram}
+                  </a>
+                </div>
               )}
             </div>
 
@@ -433,18 +493,20 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
             </button>
 
             <div className="relative w-full max-w-6xl aspect-video flex items-center justify-center overflow-hidden">
-              <motion.img
-                key={currentIndex}
-                src={data.images[currentIndex]}
-                animate={{ scale: zoom }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className={cn(
-                  "w-full h-full object-contain transition-all cursor-zoom-in",
-                  zoom > 1 && "cursor-zoom-out"
-                )}
-                onClick={toggleZoom}
-                alt="Lightbox view"
-              />
+              {images.length > 0 && (
+                <motion.img
+                  key={currentIndex}
+                  src={images[currentIndex]}
+                  animate={{ scale: zoom }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className={cn(
+                    "w-full h-full object-contain transition-all cursor-zoom-in",
+                    zoom > 1 && "cursor-zoom-out"
+                  )}
+                  onClick={toggleZoom}
+                  alt="Lightbox view"
+                />
+              )}
 
               {zoom === 1 && (
                 <>
@@ -470,7 +532,7 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
             </div>
 
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-full px-4">
-              {data.images.map((img, idx) => (
+              {images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentIndex(idx)}

@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from '../../components/PageHeader';
 import { cn, formatCurrency, compressImage } from '../../../lib/utils';
 import { VehicleData } from '../../../types';
+import { generateVehicleCopy } from '../../../lib/ai';
 
 interface VehicleResponse {
     id: string;
@@ -39,6 +40,9 @@ export default function Veiculos() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+    const [isGeneratingInsta, setIsGeneratingInsta] = useState<string | null>(null);
+    const [currentStatus, setCurrentStatus] = useState('Disponível');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [urlInput, setUrlInput] = useState('');
@@ -80,12 +84,14 @@ export default function Veiculos() {
         if (vehicle) {
             setEditingVehicleId(vehicle.id);
             setNewVehicle(vehicle.data);
+            setCurrentStatus(vehicle.status || 'Disponível');
         } else {
             setEditingVehicleId(null);
+            setCurrentStatus('Disponível');
             setNewVehicle({
                 model: '', year: '', km: '', version: '', price: '',
                 city: '', differentials: '', whatsapp: '', instagram: '',
-                color: '', description: '',
+                color: '', description: '', featured: false,
                 images: []
             });
         }
@@ -159,13 +165,13 @@ export default function Veiculos() {
         }
         setIsSaving(true);
         try {
-            const url = editingVehicleId ? `/api/vehicles/${editingVehicleId}` : '/api/vehicles';
+            const url = editingVehicleId ? `/api/vehicles?id=${editingVehicleId}` : '/api/vehicles';
             const method = editingVehicleId ? 'PUT' : 'POST';
 
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ vehicleData: newVehicle })
+                body: JSON.stringify({ vehicleData: newVehicle, status: currentStatus })
             });
             if (res.ok) {
                 closeModal();
@@ -183,7 +189,7 @@ export default function Veiculos() {
     const deleteVehicle = async (id: string) => {
         if (!confirm('Tem certeza que deseja excluir este veículo?')) return;
         try {
-            const res = await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/vehicles?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchData();
             } else {
@@ -336,11 +342,29 @@ export default function Veiculos() {
                                             <MessageCircle size={16} />
                                         </a>
                                         <button
-                                            onClick={() => alert('Copiado para o Instagram: ' + `${v.data.model} ${v.data.year} - ${formatCurrency(Number(v.data.price))}`)}
-                                            className="p-2 bg-pink-500/10 hover:bg-pink-500/20 rounded-lg text-pink-500 transition-all"
+                                            onClick={async () => {
+                                                setIsGeneratingInsta(v.id);
+                                                try {
+                                                    const res = await fetch('/api/generate', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ prompt: `Crie uma legenda para o Instagram super engajadora para vender este carro: ${v.data.model} ${v.data.version} ${v.data.year} ${v.data.km}km. Preço: R$${v.data.price}. Termine com uma CTA para chamar no direct. Use emojis.` })
+                                                    });
+                                                    const aiData = await res.json();
+                                                    if (!res.ok) throw new Error('Falha na IA');
+                                                    navigator.clipboard.writeText(aiData.text || aiData.description);
+                                                    alert('Legenda copiada para a área de transferência! Cole no seu Instagram.');
+                                                } catch (err) {
+                                                    alert('Erro ao gerar post.');
+                                                } finally {
+                                                    setIsGeneratingInsta(null);
+                                                }
+                                            }}
+                                            disabled={isGeneratingInsta === v.id}
+                                            className="p-2 bg-pink-500/10 hover:bg-pink-500/20 rounded-lg text-pink-500 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
                                             title="Preparar Post Instagram"
                                         >
-                                            <Instagram size={16} />
+                                            {isGeneratingInsta === v.id ? <Loader2 size={16} className="animate-spin" /> : <Instagram size={16} />}
                                         </button>
                                     </div>
                                     <a
@@ -462,6 +486,28 @@ export default function Veiculos() {
                                                 placeholder="São Paulo - SP"
                                             />
                                         </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">WhatsApp</label>
+                                            <input
+                                                required
+                                                className="w-full bg-transparent border-b border-white/10 py-3 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                value={newVehicle.whatsapp}
+                                                onChange={e => setNewVehicle(v => ({ ...v, whatsapp: e.target.value }))}
+                                                placeholder="(11) 90000-0000"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Instagram</label>
+                                            <div className="relative">
+                                                <span className="absolute left-0 top-3 text-white/40">@</span>
+                                                <input
+                                                    className="w-full bg-transparent border-b border-white/10 py-3 pl-5 text-sm text-white focus:border-brand-red outline-none transition-all placeholder:text-white/20"
+                                                    value={newVehicle.instagram || ''}
+                                                    onChange={e => setNewVehicle(v => ({ ...v, instagram: e.target.value }))}
+                                                    placeholder="sua.loja"
+                                                />
+                                            </div>
+                                        </div>
                                         <div className="space-y-3">
                                             <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Estoque</label>
                                             <div className="flex gap-2">
@@ -478,11 +524,69 @@ export default function Veiculos() {
                                                 ))}
                                             </div>
                                         </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Status de Venda</label>
+                                            <select
+                                                value={currentStatus}
+                                                onChange={e => setCurrentStatus(e.target.value)}
+                                                className="w-full bg-slate-900 border border-white/10 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-brand-red/50 transition-all"
+                                            >
+                                                <option value="Disponível">✅ Disponível</option>
+                                                <option value="Reservado">⏳ Reservado</option>
+                                                <option value="Vendido">🤝 Vendido</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-3 md:col-span-2">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Destaque</label>
+                                            <label className="flex items-center gap-2 cursor-pointer w-fit">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={newVehicle.featured || false}
+                                                    onChange={e => setNewVehicle(v => ({ ...v, featured: e.target.checked }))}
+                                                    className="w-5 h-5 rounded border-white/10 bg-white/5 accent-brand-red cursor-pointer"
+                                                />
+                                                <span className="text-sm font-bold text-white/80">Destacar este veículo na vitrine principal</span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Descrição</label>
+                                <div className="space-y-2 relative">
+                                    <div className="flex items-center justify-between ml-1 mb-1">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Descrição e Diferenciais</label>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (!newVehicle.model) return alert('Preencha o Modelo primeiro!');
+                                                setIsGeneratingAI(true);
+                                                try {
+                                                    const aiResult = await generateVehicleCopy(`${newVehicle.model} ${newVehicle.version} ${newVehicle.year} ${newVehicle.km}km`);
+                                                    setNewVehicle(v => ({
+                                                        ...v,
+                                                        differentials: aiResult.differentials,
+                                                        description: aiResult.description
+                                                    }));
+                                                } catch (err) {
+                                                    alert('Erro ao gerar com IA.');
+                                                } finally {
+                                                    setIsGeneratingAI(false);
+                                                }
+                                            }}
+                                            disabled={isGeneratingAI}
+                                            className="bg-brand-red/10 text-brand-red hover:bg-brand-red hover:text-white px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-2"
+                                        >
+                                            {isGeneratingAI ? <Loader2 size={12} className="animate-spin" /> : <Star size={12} />}
+                                            {isGeneratingAI ? "Gerando IA..." : "Gerar com IA"}
+                                        </button>
+                                    </div>
+                                    {newVehicle.differentials && (
+                                        <div className="bg-brand-red/5 border border-brand-red/20 rounded-xl p-4 mb-4">
+                                            <p className="text-xs font-bold text-brand-red mb-2 uppercase">Diferenciais Gerados:</p>
+                                            <p className="text-sm text-white/80">{newVehicle.differentials}</p>
+                                        </div>
+                                    )}
                                     <textarea
                                         className="w-full bg-white/[0.02] border border-white/5 rounded-3xl p-6 text-sm text-white focus:border-brand-red outline-none transition-all resize-none min-h-[120px] placeholder:text-white/20"
                                         value={newVehicle.description || ''}

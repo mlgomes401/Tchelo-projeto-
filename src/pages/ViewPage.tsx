@@ -13,7 +13,7 @@ export default function ViewPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/vehicles/${id}`);
+        const response = await fetch(`/api/vehicles?id=${id}`);
         if (!response.ok) throw new Error('Página não encontrada');
         const result = await response.json();
 

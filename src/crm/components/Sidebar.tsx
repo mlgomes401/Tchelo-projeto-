@@ -29,17 +29,23 @@ const menuItems = [
     { path: '/crm/loja', icon: Globe, label: 'Vitrine Digital' },
     { path: '/crm/financeiro', icon: DollarSign, label: 'Financeiro' },
     { path: '/crm/usuarios', icon: Users, label: 'Usuários' },
-    { path: '/crm/config', icon: Settings, label: 'Configurações' },
 ];
 
 export default function Sidebar() {
     const location = useLocation();
     const [storeName, setStoreName] = useState('AutoPage');
     const [settings, setSettings] = useState<any>(null);
+    const [userName, setUserName] = useState('Admin');
+    const [userRole, setUserRole] = useState('admin');
 
     const navigate = useNavigate();
 
     useEffect(() => {
+        const storedName = localStorage.getItem('user_name');
+        const storedRole = localStorage.getItem('user_role');
+        if (storedName) setUserName(storedName);
+        if (storedRole) setUserRole(storedRole);
+
         fetch('/api/settings')
             .then(res => {
                 if (!res.ok) throw new Error('API not ready');
@@ -115,24 +121,6 @@ export default function Sidebar() {
 
             {/* Social & Site Quick Links */}
             <div className="px-4 py-4 space-y-2">
-                <a
-                    href={`https://wa.me/55${(settings?.whatsapp || '').replace(/\D/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all text-xs font-bold"
-                >
-                    <Phone size={16} />
-                    WhatsApp Loja
-                </a>
-                <a
-                    href={`https://instagram.com/${(settings?.instagram || '').replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 transition-all text-xs font-bold"
-                >
-                    <InstaIcon size={16} />
-                    Instagram
-                </a>
                 <Link
                     to="/loja"
                     target="_blank"
@@ -148,13 +136,13 @@ export default function Sidebar() {
                 <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-red to-rose-400 p-[2px]">
-                            <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center font-bold text-white text-xs">
-                                JD
+                            <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center font-bold text-white text-xs uppercase">
+                                {storeName.substring(0, 2)}
                             </div>
                         </div>
                         <div>
-                            <p className="text-white text-sm font-bold">John Doe</p>
-                            <p className="text-white/30 text-[10px] uppercase font-bold tracking-wider">Admin</p>
+                            <p className="text-white text-sm font-bold truncate max-w-[100px]">{userName}</p>
+                            <p className="text-white/30 text-[10px] uppercase font-bold tracking-wider">{userRole}</p>
                         </div>
                     </div>
                     <button onClick={handleLogout} className="p-2 text-white/30 hover:text-brand-red transition-colors">

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { getStoreId } from './_supabase';
+import { getStoreId } from './supabase_db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,28 +21,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'GET') {
         const { data, error } = await supabase.from('settings').select('*').eq('store_id', storeId);
-        if (error) return res.status(500).json({ error: error.message });
-        const settings = (data || []).reduce((acc: any, row: any) => { acc[row.key] = row.value; return acc; }, {});
+        if (error) {
+            console.error("Settings GET error:", error);
+            return res.status(500).json({ error: error.message, details: error });
+        }
+        const settings = (data || []).reduce((acc: any, row: any) => {
+            // Remove storeId prefix if it exists to keep frontend agnostic
+            const cleanKey = row.key.startsWith(`${storeId}_`) ? row.key.replace(`${storeId}_`, '') : row.key;
+            acc[cleanKey] = row.value;
+            return acc;
+        }, {});
         return res.json(settings);
     }
 
     if (req.method === 'PATCH') {
         const settings = req.body;
         for (const [key, value] of Object.entries(settings)) {
-            // Check if exists
-            const { data } = await supabase.from('settings').select('key').eq('key', key).eq('store_id', storeId).maybeSingle();
+            const dbKey = `${storeId}_${key}`; // Prefix key with storeId to avoid PK constraint violations
+            const { data, error: fetchError } = await supabase.from('settings').select('key').eq('key', dbKey).eq('store_id', storeId).maybeSingle();
+
+            if (fetchError) {
+                console.error(`Error fetching setting ${dbKey}:`, fetchError);
+                return res.status(500).json({ error: `Erro ao verificar ${dbKey}`, details: fetchError });
+            }
 
             if (data) {
-                // Update
-                const { error: updateError } = await supabase.from('settings').update({ value }).eq('key', key).eq('store_id', storeId);
-                if (updateError) console.error(`Error updating ${key}:`, updateError);
+                const { error: updateError } = await supabase.from('settings').update({ value }).eq('key', dbKey).eq('store_id', storeId);
+                if (updateError) {
+                    console.error(`Error updating ${dbKey}:`, updateError);
+                    return res.status(500).json({ error: `Falha ao atualizar ${key}`, details: updateError });
+                }
             } else {
-                // Insert
-                const { error: insertError } = await supabase.from('settings').insert({ key, value, store_id: storeId });
-                if (insertError) console.error(`Error inserting ${key}:`, insertError);
+                const { error: insertError } = await supabase.from('settings').insert({ key: dbKey, value, store_id: storeId });
+                if (insertError) {
+                    console.error(`Error inserting ${dbKey}:`, insertError);
+                    return res.status(500).json({ error: `Falha ao inserir ${key}`, details: insertError });
+                }
             }
         }
         return res.json({ success: true });
+    }
+
+    if (req.method === 'POST' && req.query.action === 'view') {
+        const dbKey = `${storeId}_views`;
+        const { data, error: fetchError } = await supabase.from('settings').select('value').eq('key', dbKey).eq('store_id', storeId).maybeSingle();
+
+        const currentViews = data ? parseInt(data.value || '0', 10) : 0;
+        const newViews = currentViews + 1;
+
+        if (data) {
+            await supabase.from('settings').update({ value: newViews.toString() }).eq('key', dbKey).eq('store_id', storeId);
+        } else {
+            await supabase.from('settings').insert({ key: dbKey, value: newViews.toString(), store_id: storeId });
+        }
+        return res.json({ success: true, views: newViews });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

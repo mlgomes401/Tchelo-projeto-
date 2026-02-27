@@ -17,13 +17,16 @@ import {
   Share2,
   ExternalLink,
   Users,
-  X
+  Instagram,
+  X,
+  Star
 } from 'lucide-react';
 import { ImageUploader } from './ImageUploader';
 import { VehicleData } from '../types';
 import { SalesPage } from './SalesPage';
 import { cn } from '../lib/utils';
 import { generateStandaloneHTML } from '../lib/htmlGenerator';
+import { generateVehicleCopy } from '../lib/ai';
 
 import { Link } from 'react-router-dom';
 import { getAuthHeaders } from '../lib/api';
@@ -42,10 +45,13 @@ export function Creator() {
     price: '',
     city: '',
     differentials: '',
+    description: '',
     whatsapp: '',
     instagram: '',
     images: []
   });
+
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [showVehicles, setShowVehicles] = useState(false);
@@ -54,9 +60,10 @@ export function Creator() {
     try {
       const res = await fetch('/api/vehicles', { headers: getAuthHeaders() });
       const data = await res.json();
-      setVehicles(data);
+      setVehicles(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setVehicles([]);
     }
   };
 
@@ -110,6 +117,7 @@ export function Creator() {
         body: JSON.stringify({ vehicleData: data })
       });
       const result = await response.json();
+      if (!result.id) throw new Error("ID não retornado");
       setGeneratedId(result.id);
       setStep('preview');
     } catch (error) {
@@ -137,6 +145,28 @@ export function Creator() {
     const html = generateStandaloneHTML(data);
     navigator.clipboard.writeText(html);
     alert('Código HTML copiado para a área de transferência!');
+  };
+
+  const generateInstagramPost = async () => {
+    if (!data.model) return alert('Preencha o Modelo primeiro!');
+    setIsGeneratingAI(true);
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: `Crie uma legenda para o Instagram super engajadora para vender este carro: ${data.model} ${data.version} ${data.year} ${data.km}km. Liste alguns diferenciais rápido e termine com uma CTA para chamar no direct ou no link da bio. Use emojis.` })
+      });
+      const aiData = await res.json();
+      if (!res.ok) throw new Error('Falha na IA');
+
+      const postText = aiData.text || aiData.description;
+      navigator.clipboard.writeText(postText);
+      alert('Legenda para Instagram gerada e copiada para a área de transferência! Cole no seu post.');
+    } catch (err) {
+      alert('Erro ao gerar post para o Instagram.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
   };
 
   const copyLink = () => {
@@ -269,34 +299,57 @@ export function Creator() {
                 <p className="text-center py-8 text-white/30">Nenhum veículo cadastrado ainda.</p>
               ) : (
                 vehicles.map((v) => (
-                  <div key={v.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div key={v.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white/5 gap-4 rounded-xl border border-white/10">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-12 rounded-lg overflow-hidden bg-brand-gray">
-                        <img src={v.data.images[0]} className="w-full h-full object-cover" alt="" />
+                      <div className="w-16 h-12 rounded-lg overflow-hidden bg-brand-gray shrink-0">
+                        <img src={v.data?.images?.[0] || ''} className="w-full h-full object-cover" alt="" />
                       </div>
                       <div>
-                        <h4 className="font-bold">{v.data.model} {v.data.version}</h4>
+                        <h4 className="font-bold flex items-center gap-2">
+                          {v.data.model} {v.data.version}
+                          {v.data.featured && <Star size={12} className="text-purple-400 fill-purple-400" />}
+                        </h4>
                         <p className="text-xs text-white/40">{v.data.year} • {v.id}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                      <button
+                        onClick={async () => {
+                          const newFeatured = !v.data.featured;
+                          const newData = { ...v.data, featured: newFeatured };
+                          await fetch(`/api/vehicles?id=${v.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ data: newData })
+                          });
+                          fetchVehicles();
+                        }}
+                        className={cn(
+                          "p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold border",
+                          v.data.featured ? "bg-purple-500/20 text-purple-400 border-purple-500/30" : "bg-white/5 text-white/40 border-white/10 hover:text-white"
+                        )}
+                      >
+                        <Star size={16} className={cn(v.data.featured && "fill-purple-400")} />
+                        <span className="hidden md:inline">Destaque</span>
+                      </button>
+
                       <select
                         value={v.status}
                         onChange={async (e) => {
-                          await fetch(`/api/vehicles/${v.id}`, {
+                          await fetch(`/api/vehicles?id=${v.id}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: e.target.value })
                           });
                           fetchVehicles();
                         }}
-                        className="bg-brand-dark border border-white/10 rounded-lg px-3 py-1 text-xs outline-none"
+                        className="bg-brand-dark border border-white/10 rounded-lg px-3 py-2 text-xs font-bold outline-none"
                       >
                         <option value="Disponível">Disponível</option>
                         <option value="Vendido">Vendido</option>
                         <option value="Reservado">Reservado</option>
                       </select>
-                      <Link to={`/v/${v.id}`} target="_blank" className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white">
+                      <Link to={`/v/${v.id}`} target="_blank" className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white border border-transparent hover:border-white/10">
                         <ExternalLink size={18} />
                       </Link>
                     </div>
@@ -309,10 +362,39 @@ export function Creator() {
 
         <div className="glass-card p-8 md:p-12 space-y-10">
           <div className="space-y-6">
-            <h2 className="text-2xl font-display font-bold flex items-center gap-3">
-              <Car className="text-brand-red" />
-              Informações do Veículo
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-2xl font-display font-bold flex items-center gap-3">
+                <Car className="text-brand-red" />
+                Informações do Veículo
+              </h2>
+              <button
+                onClick={async () => {
+                  if (!data.model) return alert('Preencha o Modelo primeiro!');
+                  setIsGeneratingAI(true);
+                  try {
+                    const aiResult = await generateVehicleCopy(`${data.model} ${data.version} ${data.year} ${data.km}km`);
+                    setData(prev => ({ ...prev, differentials: aiResult.differentials, description: aiResult.description }));
+                  } catch (err) {
+                    alert('Erro ao gerar com IA.');
+                  } finally {
+                    setIsGeneratingAI(false);
+                  }
+                }}
+                disabled={isGeneratingAI}
+                className="btn-secondary px-4 py-2 text-xs flex items-center gap-2"
+              >
+                <Sparkles size={14} className={cn(isGeneratingAI && "animate-spin")} />
+                Gerar Textos
+              </button>
+              <button
+                onClick={generateInstagramPost}
+                disabled={isGeneratingAI}
+                className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all"
+              >
+                <Instagram size={14} className={cn(isGeneratingAI && "animate-spin")} />
+                Post Instagram
+              </button>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -344,18 +426,23 @@ export function Creator() {
                 <input name="city" value={data.city} onChange={handleChange} placeholder="São Paulo - SP" className={cn("input-field w-full", errors.city && "border-red-500")} />
                 {errors.city && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.city}</p>}
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <label className="text-sm font-semibold text-white/70">WhatsApp</label>
                 <input name="whatsapp" value={data.whatsapp} onChange={handleChange} placeholder="11999999999" className={cn("input-field w-full", errors.whatsapp && "border-red-500")} />
                 {errors.whatsapp && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.whatsapp}</p>}
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-white/70">Instagram (opcional)</label>
-                <input name="instagram" value={data.instagram} onChange={handleChange} placeholder="@seuusuario" className="input-field w-full" />
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-white/70">Instagram</label>
+                <input name="instagram" value={data.instagram} onChange={handleChange} placeholder="@sua_loja" className={cn("input-field w-full", errors.instagram && "border-red-500")} />
+                {errors.instagram && <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> {errors.instagram}</p>}
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-white/70">Diferenciais</label>
-                <textarea name="differentials" value={data.differentials} onChange={handleChange} rows={4} className="input-field w-full resize-none" />
+                <label className="text-sm font-semibold text-white/70">Diferenciais (Bullet points)</label>
+                <textarea name="differentials" value={data.differentials} onChange={handleChange} rows={3} className="input-field w-full resize-none" placeholder="Ex: Único dono&#10;Laudo Cautelar Aprovado" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-semibold text-white/70">Descrição Emocional (IA)</label>
+                <textarea name="description" value={data.description} onChange={handleChange} rows={4} className="input-field w-full resize-none" placeholder="Deixe a IA gerar uma descrição vendedora para você..." />
               </div>
             </div>
           </div>

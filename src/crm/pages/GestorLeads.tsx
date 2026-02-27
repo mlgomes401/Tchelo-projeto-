@@ -43,10 +43,14 @@ export default function GestorLeads() {
     const [filter, setFilter] = useState('Todos');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [showNewLeadModal, setShowNewLeadModal] = useState(false);
+    const [newLead, setNewLead] = useState({ client_name: '', client_phone: '', vehicle_name: '', notes: '' });
+    const [isSaving, setIsSaving] = useState(false);
 
     const fetchData = async () => {
         try {
-            const res = await fetch('/api/leads');
+            const storeId = localStorage.getItem('store_id') || 'store_demo';
+            const res = await fetch(`/api/leads?storeId=${storeId}`);
             const data = await res.json();
             setLeads(data);
         } catch (err) {
@@ -62,9 +66,12 @@ export default function GestorLeads() {
 
     const updateStatus = async (id: number, status: string) => {
         try {
-            await fetch(`/api/leads/${id}`, {
+            await fetch(`/api/leads?id=${id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
                 body: JSON.stringify({ status })
             });
             setLeads(leads.map(l => l.id === id ? { ...l, status } : l));
@@ -77,11 +84,45 @@ export default function GestorLeads() {
     const deleteLead = async (id: number) => {
         if (!confirm('Tem certeza que deseja excluir permanentemente este lead?')) return;
         try {
-            await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+            await fetch(`/api/leads?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+            });
             setSelectedLead(null);
             fetchData();
         } catch (err) {
             alert('Erro ao excluir lead');
+        }
+    };
+
+    const handleCreateLead = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSaving(true);
+        try {
+            const res = await fetch('/api/leads', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
+                body: JSON.stringify({
+                    vehicleId: 'manual',
+                    vehicleName: newLead.vehicle_name,
+                    clientName: newLead.client_name,
+                    clientPhone: newLead.client_phone,
+                    origin: 'Adicionado Manualmente',
+                    notes: newLead.notes,
+                    storeId: localStorage.getItem('store_id') || 'store_demo'
+                })
+            });
+            if (!res.ok) throw new Error('Falha ao criar lead');
+            await fetchData();
+            setShowNewLeadModal(false);
+            setNewLead({ client_name: '', client_phone: '', vehicle_name: '', notes: '' });
+        } catch (err) {
+            alert('Erro ao criar lead manual');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -151,62 +192,80 @@ export default function GestorLeads() {
                 ) : (
                     <div className="grid gap-4">
                         {filteredLeads.map((lead, i) => (
-                            <motion.div
-                                key={lead.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.05 }}
-                                className="group glass-card p-6 bg-slate-900/40 border-white/5 hover:border-white/20 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
-                            >
-                                <div className="flex items-center gap-6">
-                                    <div className="w-14 h-14 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 flex items-center justify-center text-brand-red text-xl font-black shadow-inner">
-                                        {lead.client_name?.charAt(0) || 'L'}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-3">
-                                            <h3 className="text-lg font-bold text-white tracking-tight">{lead.client_name}</h3>
-                                            <span className={cn(
-                                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                                                statusColors[lead.status] || 'text-white/40 bg-white/5 border-white/10'
-                                            )}>
-                                                {lead.status}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-xs font-bold">
-                                            <span className="text-brand-red uppercase tracking-wider">{lead.vehicle_name}</span>
-                                            <span className="w-1 h-1 bg-white/10 rounded-full" />
-                                            <span className="text-white/30 flex items-center gap-1.5"><CalendarIcon size={12} /> {new Date(lead.created_at).toLocaleDateString('pt-BR')}</span>
-                                            <span className="w-1 h-1 bg-white/10 rounded-full" />
-                                            <span className="text-white/30 px-2 py-0.5 bg-white/5 rounded-md border border-white/5">{lead.origin}</span>
-                                        </div>
+                            <div key={lead.id} className="relative group overflow-hidden rounded-[32px] mb-4">
+                                {/* Delete Background */}
+                                <div className="absolute inset-0 bg-red-600/80 flex items-center justify-end px-10">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Trash2 className="text-white" size={24} />
+                                        <span className="text-white text-[10px] uppercase font-bold tracking-widest">Excluir</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-4">
-                                    <div className="hidden lg:flex flex-col items-end px-6 border-r border-white/5">
-                                        <p className="text-xs font-black text-white/20 uppercase tracking-[0.2em] mb-1">Contato</p>
-                                        <p className="text-sm font-bold text-white">{lead.client_phone}</p>
+                                {/* Swipeable Card */}
+                                <motion.div
+                                    drag="x"
+                                    dragConstraints={{ left: -150, right: 0 }}
+                                    dragElastic={0.2}
+                                    onDragEnd={(e, info) => {
+                                        if (info.offset.x < -100) {
+                                            deleteLead(lead.id);
+                                        }
+                                    }}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                    transition={{ delay: i * 0.05, type: 'spring', bounce: 0.4 }}
+                                    className="relative z-10 bg-slate-900/90 backdrop-blur-3xl border border-white/5 hover:border-white/20 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 cursor-grab active:cursor-grabbing rounded-[32px]"
+                                >
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 flex items-center justify-center text-brand-red text-xl font-black shadow-inner">
+                                            {lead.client_name?.charAt(0) || 'L'}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="text-lg font-bold text-white tracking-tight pointer-events-none">{lead.client_name}</h3>
+                                                <span className={cn(
+                                                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border pointer-events-none",
+                                                    statusColors[lead.status] || 'text-white/40 bg-white/5 border-white/10'
+                                                )}>
+                                                    {lead.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-xs font-bold pointer-events-none">
+                                                <span className="text-brand-red uppercase tracking-wider">{lead.vehicle_name}</span>
+                                                <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                                <span className="text-white/30 flex items-center gap-1.5"><CalendarIcon size={12} /> {new Date(lead.created_at).toLocaleDateString('pt-BR')}</span>
+                                                <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                                <span className="text-white/30 px-2 py-0.5 bg-white/5 rounded-md border border-white/5">{lead.origin}</span>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => setSelectedLead(lead)}
-                                            className="p-3 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl transition-all"
-                                        >
-                                            <MoreVertical size={20} />
-                                        </button>
+                                    <div className="flex items-center gap-4">
+                                        <div className="hidden lg:flex flex-col items-end px-6 border-r border-white/5 pointer-events-none">
+                                            <p className="text-xs font-black text-white/20 uppercase tracking-[0.2em] mb-1">Contato</p>
+                                            <p className="text-sm font-bold text-white">{lead.client_phone}</p>
+                                        </div>
 
-                                        <a
-                                            href={`https://wa.me/55${(lead.client_phone || '').replace(/\D/g, '')}`}
-                                            target="_blank"
-                                            className="flex items-center gap-2 px-6 py-3 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-xl transition-all border border-green-500/20 font-bold text-sm"
-                                        >
-                                            <MessageSquare size={18} />
-                                            Atender
-                                        </a>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setSelectedLead(lead)}
+                                                className="p-3 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl transition-all"
+                                            >
+                                                <MoreVertical size={20} />
+                                            </button>
+
+                                            <a
+                                                href={`https://wa.me/55${(lead.client_phone || '').replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                className="flex items-center gap-2 px-6 py-3 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-xl transition-all border border-green-500/20 font-bold text-sm"
+                                            >
+                                                <MessageSquare size={18} />
+                                                Atender
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
+                                </motion.div>
+                            </div>
                         ))}
                     </div>
                 )}
@@ -293,7 +352,7 @@ export default function GestorLeads() {
                                             placeholder="Descreva a negociação, interesses específicos..."
                                             defaultValue={selectedLead.notes}
                                             onBlur={(e) => {
-                                                fetch(`/api/leads/${selectedLead.id}`, {
+                                                fetch(`/api/leads?id=${selectedLead.id}`, {
                                                     method: 'PATCH',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({ notes: e.target.value })
@@ -321,6 +380,7 @@ export default function GestorLeads() {
                     </div>
                 )}
             </AnimatePresence>
+
         </div>
     );
 }

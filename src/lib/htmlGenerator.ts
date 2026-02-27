@@ -1,13 +1,13 @@
 import { VehicleData } from '../types';
 
 export function generateStandaloneHTML(data: VehicleData) {
-  const imagesJSON = JSON.stringify(data.images);
-  const whatsappUrl = `https://wa.me/55${(data.whatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
-  const priceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.price));
-  const kmFormatted = new Intl.NumberFormat('pt-BR').format(Number(data.km)) + ' km';
-  const differentialsList = data.differentials.split('\n').filter(d => d.trim());
+    const imagesJSON = JSON.stringify(data.images);
+    const whatsappUrl = `https://wa.me/55${(data.whatsapp || '').replace(/\D/g, '')}?text=Olá! Vi o anúncio do ${data.model} ${data.version} e gostaria de mais informações.`;
+    const priceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.price));
+    const kmFormatted = new Intl.NumberFormat('pt-BR').format(Number(data.km)) + ' km';
+    const differentialsList = data.differentials.split('\n').filter(d => d.trim());
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -114,7 +114,7 @@ export function generateStandaloneHTML(data: VehicleData) {
                     <div class="space-y-4 text-white/70">
                         <p>📍 Localização: ${data.city}</p>
                         <p>📱 WhatsApp: ${data.whatsapp}</p>
-                        ${data.instagram ? `<p>📸 Instagram: ${data.instagram}</p>` : ''}
+                        ${data.instagram ? `<p class="flex items-center gap-2">📸 Instagram: <a href="https://instagram.com/${data.instagram.replace('@', '')}" target="_blank" class="hover:text-brand-red">${data.instagram}</a></p>` : ''}
                     </div>
                     <a href="${whatsappUrl}" target="_blank" class="btn-primary w-full justify-center py-4 text-lg">
                         Falar com Vendedor

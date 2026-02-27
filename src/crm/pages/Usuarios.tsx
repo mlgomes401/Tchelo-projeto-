@@ -28,7 +28,9 @@ export default function Usuarios() {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('/api/users');
+            const res = await fetch('/api/users', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+            });
             if (res.ok) {
                 const data = await res.json();
                 setUsers(data);
@@ -52,7 +54,10 @@ export default function Usuarios() {
         try {
             const res = await fetch('/api/users', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
                 body: JSON.stringify({
                     name: newName,
                     username: newUsername,
@@ -83,7 +88,10 @@ export default function Usuarios() {
         if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
         try {
-            const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/users?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+            });
             if (res.ok) {
                 await fetchUsers();
             } else {

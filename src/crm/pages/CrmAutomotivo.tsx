@@ -59,9 +59,12 @@ export default function CrmAutomotivo() {
 
     const moveLead = async (id: number, newStatus: string) => {
         try {
-            await fetch(`/api/leads/${id}`, {
+            await fetch(`/api/leads?id=${id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
                 body: JSON.stringify({ status: newStatus })
             });
             setLeads(leads.map(l => l.id === id ? { ...l, status: newStatus } : l));
@@ -75,7 +78,10 @@ export default function CrmAutomotivo() {
         try {
             await fetch('/api/leads', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
                 body: JSON.stringify({
                     vehicleId: 'manual',
                     vehicleName: newLead.vehicle,

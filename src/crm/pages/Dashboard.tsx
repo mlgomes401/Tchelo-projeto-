@@ -7,7 +7,10 @@ import {
     Target,
     ArrowUpRight,
     ExternalLink,
-    Store
+    Store,
+    Sparkles,
+    Loader2,
+    Bot
 } from 'lucide-react';
 import {
     AreaChart,
@@ -35,6 +38,8 @@ export default function Dashboard() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
     const [periodo, setPeriodo] = useState<'mensal' | 'semanal'>('mensal');
+    const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -58,6 +63,59 @@ export default function Dashboard() {
         { label: 'Total Leads (Mês)', value: stats?.totalLeads, icon: MessageSquare, color: 'text-brand-red', trend: '+18%', path: '/crm/leads' },
         { label: 'Taxa de Conversão', value: `${stats?.conversionRate || 0}%`, icon: Target, color: 'text-purple-500', trend: '+2%', path: '/crm/funil' },
     ];
+
+    const handleAnalyze = async () => {
+        setIsAnalyzing(true);
+        try {
+            const res = await fetch('/api/analytics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
+                body: JSON.stringify({})
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erro ao gerar análise');
+            setAiAnalysis(data.analysis);
+        } catch (err: any) {
+            console.error(err);
+            alert('Falha ao gerar consultoria: ' + err.message);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const renderAIAnalysis = (text: string) => {
+        return text.split('\n').map((line, i) => {
+            if (line.startsWith('**') && line.endsWith('**')) {
+                return (
+                    <h4 key={i} className="text-xl font-display font-black text-white mt-8 mb-4 border-b border-white/10 pb-2">
+                        {line.replace(/\*\*/g, '')}
+                    </h4>
+                );
+            }
+            if (line.startsWith('* ') || line.startsWith('- ')) {
+                return (
+                    <li key={i} className="text-white/70 ml-6 mb-2 flex items-start gap-2 text-sm">
+                        <span className="text-brand-red mt-1">•</span>
+                        <span>{line.substring(2).replace(/\*\*(.*?)\*\*/g, '$1')}</span>
+                    </li>
+                );
+            }
+            if (line.trim() === '') return null; // Ignore empty lines to control spacing via margins
+
+            // Bold parser inside text
+            const boldParsed = line.split(/(\*\*.*?\*\*)/).map((part, j) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={j} className="text-white">{part.replace(/\*\*/g, '')}</strong>;
+                }
+                return part;
+            });
+
+            return <p key={i} className="text-white/70 leading-relaxed mb-4 text-sm font-medium">{boldParsed}</p>;
+        });
+    };
 
     return (
         <div className="space-y-10">
@@ -86,6 +144,67 @@ export default function Dashboard() {
                         <StatCard {...stat} index={i} />
                     </Link>
                 ))}
+            </div>
+
+            {/* AI Sales Director */}
+            <div className="glass-card p-1 bg-gradient-to-br from-brand-red/20 via-slate-900/40 to-slate-900/40 border border-brand-red/30 rounded-3xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <Bot size={200} />
+                </div>
+                <div className="p-8 md:p-10 relative z-10">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-brand-red/20 rounded-2xl flex items-center justify-center border border-brand-red/30 shadow-[0_0_30px_rgba(227,29,45,0.2)]">
+                                <Sparkles className="text-brand-red" size={28} />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-display font-black text-white tracking-tight">Gestor IA</h3>
+                                <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">Sua Consultoria de Vendas ao Vivo</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleAnalyze}
+                            disabled={isAnalyzing}
+                            className="bg-brand-red hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(227,29,45,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isAnalyzing ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    Analisando Dados...
+                                </>
+                            ) : (
+                                <>
+                                    <Target size={16} />
+                                    Gerar Análise Estratégica
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {isAnalyzing && (
+                        <div className="py-20 flex flex-col items-center justify-center space-y-4">
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-brand-red/50 blur-xl rounded-full animate-pulse"></div>
+                                <Bot size={48} className="text-brand-red relative animate-bounce" />
+                            </div>
+                            <p className="text-brand-red font-bold animate-pulse text-sm uppercase tracking-widest">Avaliando performance de vendas e formatando plano...</p>
+                        </div>
+                    )}
+
+                    {!isAnalyzing && aiAnalysis && (
+                        <div className="bg-slate-950/50 border border-white/5 rounded-2xl p-6 md:p-10">
+                            <div className="prose prose-invert max-w-none">
+                                {renderAIAnalysis(aiAnalysis)}
+                            </div>
+                        </div>
+                    )}
+
+                    {!isAnalyzing && !aiAnalysis && (
+                        <div className="bg-slate-950/30 border border-white/5 rounded-2xl p-10 text-center">
+                            <p className="text-white/30 text-sm font-medium leading-relaxed">Clique no botão acima para que a IA analise todo o seu volume de leads, <br /> funil comercial e estoque de veículos para sugerir um plano de ação fulminante.</p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">

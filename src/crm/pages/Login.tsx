@@ -27,6 +27,8 @@ export default function Login() {
                 const data = await res.json();
                 localStorage.setItem('auth_token', data.token);
                 localStorage.setItem('store_id', data.storeId || '');
+                localStorage.setItem('user_name', data.user?.name || '');
+                localStorage.setItem('user_role', data.user?.role || '');
                 navigate('/crm/dashboard');
             } else {
                 setError('Credenciais inválidas. Tente novamente.');

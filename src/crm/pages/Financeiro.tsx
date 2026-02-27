@@ -166,7 +166,7 @@ export default function Financeiro() {
 
     const deleteTransaction = async (id: string) => {
         try {
-            const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/transactions?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
                 setTransactionList(prev => prev.filter(t => t.id !== id));
             }

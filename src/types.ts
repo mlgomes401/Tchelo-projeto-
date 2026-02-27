@@ -13,4 +13,5 @@ export interface VehicleData {
   color?: string;
   description?: string;
   stockType?: 'proprio' | 'consignado';
+  featured?: boolean;
 }
