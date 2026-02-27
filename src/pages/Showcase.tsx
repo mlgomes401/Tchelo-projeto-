@@ -260,9 +260,9 @@ export default function Showcase() {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative py-20 overflow-hidden">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-red/5 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -ml-64 -mb-64 pointer-events-none" />
+            <section className="relative py-12 overflow-hidden">
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-red/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] -ml-48 -mb-48 pointer-events-none" />
 
                 <div className="max-w-7xl mx-auto px-6 relative z-10 text-center space-y-6">
                     <motion.div
@@ -292,7 +292,7 @@ export default function Showcase() {
             </section >
 
             {/* Filter Bar */}
-            <div className="max-w-7xl mx-auto px-6 relative z-50 mt-12 mb-16 md:sticky top-24">
+            <div className="max-w-7xl mx-auto px-6 relative z-50 mt-4 mb-8 md:sticky top-24">
                 <div className="glass-card p-4 flex flex-col md:flex-row items-center gap-4 bg-slate-900/60 backdrop-blur-2xl border-white/10 shadow-2xl">
                     <div className="relative flex-1 group w-full">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-red transition-colors" size={20} />

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getStoreId, supabase } from './supabase_db.js';
+import { getStoreId, supabase } from './_supabase_db.js';
 import { GoogleGenAI } from '@google/genai';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const leadsCount = leads?.length || 0;
         const newLeads = leads?.filter(l => l.status === 'Novo').length || 0;
         const inProgressLeads = leads?.filter(l => l.status === 'Em Atendimento').length || 0;
-        const wonLeads = leads?.filter(l => l.status === 'Vendido' || l.status === 'Ganho').length || 0;
+        const wonLeads = leads?.filter(l => l.status === 'Fechado' || l.status === 'Vendido' || l.status === 'Ganho').length || 0;
         const lostLeads = leads?.filter(l => l.status === 'Perdido').length || 0;
 
         const vehiclesCount = vehicles?.length || 0;
@@ -69,33 +69,25 @@ DADOS REAIS DA LOJA DO CLIENTE (Referência para análise rigorosa):
         const client = new GoogleGenAI({ apiKey });
 
         const SYSTEM_PROMPT = `Você é um DIRETOR COMERCIAL de elite e GESTOR FINANCEIRO especializado no mercado automotivo.
-Sua função é agir como um consultor experiente focado EXTREMAMENTE em:
-- Aumentar conversão de vendas.
-- Melhorar a performance e velocidade de atendimento.
-- Identificar gargalos no funil (leads parados).
-- Estruturar metas claras e acionáveis.
-- Otimizar o fluxo do CRM Automotivo.
+Sua função é agir como um consultor experiente.
+REGRA DE OURO: SEJA EXTREMAMENTE CURTO, DIRETO E CONCISO. Use no máximo 2 linhas por tópico. Sem respostas longas. Vá direto ao ponto.
 
-Você NUNCA responde de forma genérica. Avalie os dados com frieza, como quem ganha comissão por performance. Fale de negócios, dinheiro na mesa e eficiência.
-
-Sempre entregue sua análise OBRIGATORIAMENTE estruturada neste formato exato usando Markdown (não use cabeçalhos h1/h2, apenas os emojis com texto em negrito e listas):
+Sempre entregue sua análise OBRIGATORIAMENTE estruturada neste formato exato usando Markdown:
 
 **📊 Diagnóstico Atual**
-[Sua análise direta e ácida do cenário atual da loja, elogiando o que é bom e apontando a realidade do que está fraco.]
+[Máx 2 frases: análise direta do cenário atual]
 
 **📉 Gargalos Identificados**
-[Lista com os principais problemas baseados estritamente nos dados de leads não atendidos, perdidos ou taxa de conversão estagnada.]
+[Máx 2 bullets de problemas reais nos números de leads/estoque]
 
 **🚀 Oportunidades de Crescimento**
-[O que a loja deve fazer cruzando o estoque atual com a origem que traz mais leads.]
+[Máx 2 bullets do que fazer hoje para vender os veículos disponíveis]
 
 **🎯 Plano de Ação em Etapas**
-[1, 2, 3 passos práticos para amanhã de manhã a equipe de vendas executar e bater meta.]
+[1, 2 passos práticos ultra curtos]
 
 **📈 Meta Recomendada**
-[Uma meta matemática desafiadora mas tangível baseada no volume atual.]
-
-Analise os dados abaixo e forneça a consultoria de forma premium, profissional e impiedosa com ineficiências:
+[Uma meta de vendas factível]
 `;
 
         const fullPrompt = SYSTEM_PROMPT + "\n\n" + storeDataContext;
@@ -103,6 +95,10 @@ Analise os dados abaixo e forneça a consultoria de forma premium, profissional 
         const result = await client.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: fullPrompt,
+            config: {
+                maxOutputTokens: 250,
+                temperature: 0.7
+            }
         });
 
         if (!result || !result.text) {
