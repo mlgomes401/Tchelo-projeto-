@@ -35,7 +35,7 @@ export default function Showcase() {
     const [storeName, setStoreName] = useState('AutoPage');
     const [storeWhatsapp, setStoreWhatsapp] = useState('');
     const [storeInstagram, setStoreInstagram] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
     const [welcomeText, setWelcomeText] = useState('');
     const [heroTitle, setHeroTitle] = useState('Encontre seu próximo<br />veículo <span class="text-brand-red">Premium</span>');
     const [showLeadForm, setShowLeadForm] = useState(false);
@@ -291,54 +291,40 @@ export default function Showcase() {
                 </div>
             </section >
 
-            {/* Filter Bar */}
-            <div className="max-w-7xl mx-auto px-6 relative z-50 mt-4 mb-8 md:sticky top-24">
-                <div className="glass-card p-4 flex flex-col md:flex-row items-center gap-4 bg-slate-900/60 backdrop-blur-2xl border-white/10 shadow-2xl">
-                    <div className="relative flex-1 group w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-red transition-colors" size={20} />
+            {/* Filter Bar - Minimalist */}
+            <div className="max-w-7xl mx-auto px-6 relative z-50 mt-8 mb-12">
+                <div className="flex flex-col gap-6">
+                    {/* Minimal Search Input */}
+                    <div className="relative w-full max-w-md">
                         <input
                             type="text"
-                            placeholder="Pesquisar por modelo, marca ou versão..."
-                            className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm text-white outline-none focus:border-brand-red/30 transition-all font-medium placeholder:text-white/10"
+                            placeholder="Buscar veículos..."
+                            className="w-full bg-transparent border-b border-white/20 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-brand-red transition-all placeholder:text-white/30 font-medium"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                        <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-brand-red transition-colors" size={18} />
                     </div>
 
-                    <div className="flex items-center justify-between w-full md:w-auto overflow-x-auto pb-4 md:pb-0 scrollbar-hide gap-4 border-l border-white/5 pl-4">
-                        <div className="flex items-center gap-2">
-                            {['Todos', 'Destaques', 'Disponível', 'Reservado'].map(cat => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setSelectedCategory(cat)}
-                                    className={cn(
-                                        "px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border",
-                                        selectedCategory === cat
-                                            ? "bg-brand-red border-brand-red text-white shadow-xl shadow-brand-red/20"
-                                            : "bg-white/5 border-white/5 text-white/30 hover:border-white/20 hover:text-white"
-                                    )}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex bg-slate-800 rounded-xl overflow-hidden p-1 mr-2 border border-white/10 shrink-0">
+                    {/* Horizontal Scrollable Categories */}
+                    <div className="flex items-center w-full overflow-x-auto pb-4 scrollbar-hide gap-3 snap-x">
+                        {['Todos', 'Destaques', 'Disponível', 'Reservado'].map(cat => (
                             <button
-                                onClick={() => setViewMode('grid')}
-                                className={cn("px-4 py-2 text-xs font-bold rounded-lg transition-colors", viewMode === 'grid' ? "bg-white/10 text-white" : "text-white/40")}
+                                key={cat}
+                                onClick={() => setSelectedCategory(cat)}
+                                className={cn(
+                                    "px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap snap-start border hover:border-white/40",
+                                    selectedCategory === cat
+                                        ? "bg-white text-brand-dark border-white shadow-xl shadow-white/10"
+                                        : "bg-transparent text-white/50 border-white/10 hover:text-white hover:bg-white/5"
+                                )}
                             >
-                                Grid
+                                {cat}
                             </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={cn("px-4 py-2 text-xs font-bold rounded-lg transition-colors", viewMode === 'list' ? "bg-white/10 text-white" : "text-white/40")}
-                            >
-                                Lista
-                            </button>
-                        </div>
+                        ))}
                     </div>
                 </div>
-            </div >
+            </div>
 
             {/* Grid de Veículos */}
             < main className="max-w-7xl mx-auto px-6 pb-32" >
@@ -363,10 +349,7 @@ export default function Showcase() {
                             </button>
                         </div>
                     ) : (
-                        <div className={cn(
-                            "gap-8",
-                            viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "flex flex-col space-y-4"
-                        )}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             <AnimatePresence mode='popLayout'>
                                 {filteredVehicles.map((v, i) => (
                                     <motion.div
@@ -378,15 +361,9 @@ export default function Showcase() {
                                     >
                                         <Link
                                             to={`/v/${v.id}`}
-                                            className={cn(
-                                                "group block glass-card overflow-hidden bg-slate-900/40 border-white/5 hover:border-brand-red/30 transition-all duration-500 shadow-xl",
-                                                viewMode === 'list' && "flex flex-col md:flex-row items-stretch"
-                                            )}
+                                            className="group block glass-card overflow-hidden bg-slate-900/40 border-white/5 hover:border-brand-red/30 transition-all duration-500 shadow-xl"
                                         >
-                                            <div className={cn(
-                                                "overflow-hidden relative shrink-0",
-                                                viewMode === 'grid' ? "aspect-[16/10]" : "md:w-64 h-48 md:h-auto"
-                                            )}>
+                                            <div className="overflow-hidden relative shrink-0 aspect-[16/10]">
                                                 <img
                                                     src={v.data?.images?.[0] || ''}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -407,24 +384,17 @@ export default function Showcase() {
                                                 </div>
                                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
 
-                                                <div className={cn(
-                                                    "absolute bottom-4 left-4 right-4 flex justify-between items-end transform opacity-0 transition-all duration-300",
-                                                    viewMode === 'list' ? "translate-y-0 opacity-100 md:opacity-0 group-hover:opacity-100" : "translate-y-4 group-hover:translate-y-0 group-hover:opacity-100"
-                                                )}>
-                                                    {viewMode === 'grid' && (
-                                                        <>
-                                                            <span className="text-white font-display font-black text-2xl tracking-tighter">
-                                                                {formatCurrency(Number(v.data.price))}
-                                                            </span>
-                                                            <div className="bg-brand-red text-white p-2 rounded-xl shadow-lg shadow-brand-red/30">
-                                                                <ArrowRight size={20} />
-                                                            </div>
-                                                        </>
-                                                    )}
+                                                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end transform opacity-0 translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                                                    <span className="text-white font-display font-black text-2xl tracking-tighter drop-shadow-xl">
+                                                        {formatCurrency(Number(v.data.price))}
+                                                    </span>
+                                                    <div className="bg-brand-red text-white p-2 rounded-xl shadow-lg shadow-brand-red/30">
+                                                        <ArrowRight size={20} />
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className={cn("p-8 space-y-6 flex-1 flex flex-col justify-between", viewMode === 'list' && "py-6 px-8")}>
+                                            <div className="p-8 space-y-6 flex-1 flex flex-col justify-between">
                                                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                                                     <div className="space-y-1">
                                                         <h3 className="text-2xl font-display font-black text-white group-hover:text-brand-red transition-colors leading-tight">
@@ -432,11 +402,6 @@ export default function Showcase() {
                                                         </h3>
                                                         <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{v.data.version}</p>
                                                     </div>
-                                                    {viewMode === 'list' && (
-                                                        <span className="text-brand-red font-display font-black text-3xl tracking-tighter">
-                                                            {formatCurrency(Number(v.data.price))}
-                                                        </span>
-                                                    )}
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4 pb-6 border-b border-white/5">
