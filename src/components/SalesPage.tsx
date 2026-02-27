@@ -475,6 +475,18 @@ export function SalesPage({ data, isPreview }: SalesPageProps) {
         </motion.div>
       </section>
 
+      {/* Floating Mobile WhatsApp Button */}
+      <div className="fixed bottom-6 right-6 md:hidden z-[90]">
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleLeadCapture}
+          className="w-14 h-14 bg-[#25D366] hover:bg-[#1EBE5D] text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 animate-bounce-subtle"
+        >
+          <MessageCircle size={28} />
+        </a>
+      </div>
 
       {/* Lightbox */}
       <AnimatePresence>
