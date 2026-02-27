@@ -104,8 +104,8 @@ export default function LojaVirtual() {
             const featured = vehicles.filter((v: any) => v.data && v.data.featured).slice(0, 5).map((v: any) => `${v.data.model} ${v.data.year}`).join(', ');
 
             const promptText = featured
-                ? `Crie um pequeno texto de boas vindas (max 2 parágrafos) para uma vitrine de carros contendo estes modelos em destaque: ${featured}. Use um tom premium e chamativo.`
-                : `Crie um pequeno texto de boas vindas (max 2 parágrafos) genérico e premium para uma vitrine de carros importados e exclusivos.`;
+                ? `Escreva UM ÚNICO PARÁGRAFO CURTO (máximo 3 linhas) de boas-vindas para uma loja de carros premium. Foco EXTREMO em vendas e conversão. Mencione que temos ofertas nestes destaques: ${featured}. Seja direto, persuasivo e minimalista. NUNCA use saudações genéricas.`
+                : `Escreva UM ÚNICO PARÁGRAFO CURTO (máximo 3 linhas) de boas-vindas para uma loja de carros premium. Foco EXTREMO em conversão e escassez. Convide o cliente a ver o estoque exclusivo. Seja persuasivo e minimalista.`;
 
             const aiRes = await fetch('/api/generate', {
                 method: 'POST',
