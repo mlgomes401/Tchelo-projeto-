@@ -247,13 +247,22 @@ export default function LojaVirtual() {
 
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-4">Título Principal (Vitrine)</label>
-                                <input
-                                    value={settings.heroTitle}
-                                    onChange={e => setSettings({ ...settings, heroTitle: e.target.value })}
-                                    className="w-full bg-slate-950 border border-white/10 rounded-3xl py-5 px-8 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-medium"
-                                    placeholder="Ex: Encontre seu próximo veículo Premium"
+                                <textarea
+                                    value={(settings.heroTitle || '')
+                                        .replace(/<br\s*\/?>/gi, '\n')
+                                        .replace(/<span class="text-brand-red">(.*?)<\/span>/gi, '*$1*')
+                                        .replace(/<span className="text-brand-red">(.*?)<\/span>/gi, '*$1*')}
+                                    onChange={e => {
+                                        const htmlVal = e.target.value
+                                            .replace(/\n/g, '<br />')
+                                            .replace(/\*(.*?)\*/g, '<span class="text-brand-red">$1</span>');
+                                        setSettings({ ...settings, heroTitle: htmlVal });
+                                    }}
+                                    rows={3}
+                                    className="w-full bg-slate-950 border border-white/10 rounded-3xl py-5 px-8 text-white text-sm outline-none focus:border-brand-red/50 transition-all font-medium leading-relaxed"
+                                    placeholder="Ex: Encontre seu próximo veículo *Premium*"
                                 />
-                                <p className="text-[10px] text-white/30 font-medium ml-4 mt-2">Dica: use &lt;br&gt; para pular linha. Ex: Veículos&lt;br&gt;Exclusivos.</p>
+                                <p className="text-[10px] text-white/30 font-medium ml-4 mt-2">Dica: Aperte ENTER para pular linha. Digite a palavra entre *asteriscos* para ela ficar vermelha (Ex: *Premium*).</p>
                             </div>
 
                             <div className="space-y-3">
